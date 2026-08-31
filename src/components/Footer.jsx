@@ -7,20 +7,20 @@ export default function Footer({
     return (
         <footer className="bg-white">
             {(showSignupBanner) &&
-                <div className="footer-bg">
+                <div className="footer-bg py-6">
                     <div className="container mx-auto px-4 max-w-screen-md pt-24 text-center pb-[150px]">
                         <h3 className="text-xl sm:text-3xl leading-2 sm:leading-10 font-semibold sm:font-bold text-gray-800">Nurture leads efficiently with Leadstor, the best lead management software.</h3>
                         <p className="mt-3 text-sm sm:text-base text-slate-600">Start with 10 free leads &amp; 1 integration. No credit card required. No strings attached.</p>
                         <div className="relative inline-flex group mt-8">
                             <div className="absolute transitiona-all duration-1000 opacity-10 -inset-px bg-gradient-to-r from-[#44BCFF] via-[#FF44EC] to-[#FF675E] rounded-xl blur-lg filter group-hover:opacity-100 group-hover:-inset-1 group-hover:duration-200"></div>
-                            <a href="/signup" target="_self" title="" role="button" className="relative inline-flex items-center justify-center px-8 py-2 text-sm font-medium text-white transition-all duration-200 bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 hover:bg-gray-800 rounded">Signup for free</a>
+                            <a href="/signup" target="_self" title="" role="button" className="relative inline-flex items-center justify-center px-8 py-4 text-base font-medium text-white transition-all duration-200 bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 hover:bg-gray-800 rounded">CREATE A FREE ACCOUNT</a>
                         </div>
                         <p className="mt-3 text-gray-400 text-sm">Get full access to the product, no credit card required</p>
                     </div>
                 </div>
             }
 
-            <div className="container mx-auto px-4 py-10 max-w-screen-xl">
+            <div className="container mx-auto px-4 py-20 max-w-screen-xl">
                 <Image
                     className="mb-8"
                     placeholder='empty'
@@ -32,8 +32,12 @@ export default function Footer({
                 />
                 <div className="flex gap-20">
                     <div className="max-w-none md:max-w-[312px] lg:max-w-[512px]">
-                        <h4 className="text-gray-800 poppins text-xl">Leadstor.in - Simplified Lead Management & CRM</h4>
-                        <p className="text-gray-500 text-sm mt-4 text-justify">We offers the most user-friendly lead management software to help businesses capture, track, and manage leads efficiently. Our all-in-one CRM platform simplifies lead nurturing, automates follow-ups, and streamlines customer engagement for better conversions. Qualify leads faster, manage sales pipelines, and boost productivity with Leadstor&apos;s intuitive tools. Whether you&apos;re a small business or enterprise, Leadstor.in makes managing and converting leads effortless. Start growing your business today with the most simplified lead manager and CRM.</p>
+                        <h4 className="text-gray-800 poppins text-xl">Leadstor.in &mdash; Simplified Lead Management & CRM</h4>
+                        <p className="text-gray-500 pr-20 text-sm mt-4 text-justify">
+                            Capture, manage, and convert leads effortlessly with Leadstor.
+                            Manage your sales pipeline, automate follow-ups, and keep your
+                            team focused on closing more deals.
+                        </p>
                         <div className="text-gray-700 text-base font-semibold mt-8">Follow Us On</div>
                         <div className="flex gap-3">
                             <a href="https://www.facebook.com/profile.php?id=61565472072220" target="_blank" className="h-8 w-8 mt-4 border border-gray-800 rounded-full flex justify-center align-middle">

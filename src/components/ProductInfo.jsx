@@ -4,7 +4,7 @@ export default function ProductInfo() {
     return (
         <>
             <section className="bg-white">
-                <div className="container mx-auto px-4 max-w-screen-xl py-16 cursor-default">
+                <div className="container mx-auto px-4 max-w-screen-xl pt-16 cursor-default">
                     <div className="lg:flex gap-16 xl:gap-32">
                         <div className="flex-1 lg:flex justify-center hidden">
                             <Image
@@ -26,7 +26,7 @@ export default function ProductInfo() {
                             <p className="text-gray-600 mt-4 lg:mt-8 font-normal text-lg">Explore how our solution can optimize your lead management, streamline processes, and drive better results for your business.</p>
 
                             <div className="flex mt-6 lg:mt-8 gap-4">
-                                <div className="hidden sm:flex justify-center items-center border h-14 w-14 border-gray-300 rounded-full font-semibold text-xl">
+                                <div className="hidden sm:flex justify-center items-center border h-8 w-8 border-gray-300 rounded-full font-semibold text-base">
                                     01
                                 </div>
                                 <div className="flex-1">
@@ -35,7 +35,7 @@ export default function ProductInfo() {
                                 </div>
                             </div>
                             <div className="flex mt-4 lg:mt-8 gap-4">
-                                <div className="hidden sm:flex justify-center items-center border h-14 w-14 border-gray-300 rounded-full font-semibold text-xl">
+                                <div className="hidden sm:flex justify-center items-center border h-8 w-8 border-gray-300 rounded-full font-semibold text-base">
                                     02
                                 </div>
                                 <div>
@@ -46,7 +46,7 @@ export default function ProductInfo() {
                         </div>
                     </div>
 
-                    <div className="lg:flex gap-16 xl:gap-32 pt-12 lg:pt-0">
+                    <div className="lg:flex gap-16 xl:gap-32 pt-12 lg:pt-16">
                         <div className="flex-1 px-4 sm:px-10 lg:px-0">
                             <h4 className="mt-8 flex uppercase poppins text-gray-500 text-base font-semibold">grow your business faster</h4>
                             <h3 className="text-4xl lg:text-5xl font-bold text-gray-700 mt-2">Track Your Lead <span className="foot-brush brush-yellow">Activities</span></h3>
