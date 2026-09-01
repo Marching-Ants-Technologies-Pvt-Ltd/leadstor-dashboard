@@ -6,9 +6,13 @@ import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { menuItems } from '@/lib/sidebarConfig'; // adjust path
 
+import { useTour } from '@reactour/tour'
+import { getTourSteps } from '@/data/tour'
+
 
 export default function Sidebar({ collapsed, setCollapsed, userRole }) {
   const pathname = usePathname();
+  const { isOpen, currentStep, steps, setIsOpen, setCurrentStep, setSteps } = useTour()
 
   const isActive = (href) =>
     pathname === href || pathname.startsWith(`${href}/`);
@@ -39,7 +43,7 @@ export default function Sidebar({ collapsed, setCollapsed, userRole }) {
 
   return (
     <aside
-      className={`bg-white transition-all duration-400 ease-in-out shrink-0 border-r border-slate-100/80
+      className={`bg-white flex flex-col transition-all duration-400 ease-in-out shrink-0 border-r border-slate-100/80
         ${collapsed ? 'w-16' : 'w-[220px]'}`}
     >
       {/* LOGO */}
@@ -49,7 +53,7 @@ export default function Sidebar({ collapsed, setCollapsed, userRole }) {
       </div>
 
       {/* NAV */}
-      <nav className="pt-2">
+      <nav className="pt-2 flex-1">
         {visibleItems.map((item, i) => {
           const active = isActive(item.href);
 
@@ -89,6 +93,31 @@ export default function Sidebar({ collapsed, setCollapsed, userRole }) {
           </div>
         )}
       </nav>
+
+      <div className='py-4 px-2'>
+
+        <button onClick={() => {
+          const tour = getTourSteps(pathname);
+
+          setSteps(tour);
+          setCurrentStep(0);
+          setIsOpen(true);
+
+        }} className='text-slate-600 rounded-md hover:bg-blue-50 hover:text-blue-600 group h-10 flex items-center gap-2 px-4 text-sm cursor-pointer transition w-full'>
+          <i className="ri-slideshow-3-line text-[19px]"></i>
+          {!collapsed && (
+            <span className='font-semibold'>Take a tour</span>
+          )}
+        </button>
+
+        <a href='https://leadstor.in/contact' target='_blank' className='text-slate-600 hover:bg-blue-50 hover:text-blue-600 group h-10 flex items-center gap-2 px-4 mt-1 rounded-lg text-sm cursor-pointer transition'>
+          <i className="ri-customer-service-2-line text-[18px]"></i>
+          {!collapsed && (
+            <span className='font-semibold'>Need Help?</span>
+          )}
+        </a>
+
+      </div>
     </aside>
   );
 }

@@ -94,7 +94,7 @@ export default function Navbar({ collapsed, setCollapsed, data }) {
       {( userRoles.includes("Admin") || userRoles.includes("Administrator") || userRoles.includes("Super Counsellor")) && (
       
         <div className="relative group">
-          <button className="nav-icon" title='Analytics'>
+          <button className="nav-icon analytics-button" title='Analytics'>
             <Link
                 href="/analytics/classic-analytics"
               ><i className="ri-pie-chart-line"></i>
@@ -103,7 +103,7 @@ export default function Navbar({ collapsed, setCollapsed, data }) {
         </div>
       )}
 
-        <button className="nav-icon" title="Notifications">
+        <button className="nav-icon notification-button" title="Notifications">
           <i className="ri-notification-2-line"></i>
         </button>
       </div>
@@ -112,7 +112,7 @@ export default function Navbar({ collapsed, setCollapsed, data }) {
       <div className="relative">
         <button
           onClick={() => setOpen(v => !v)}
-          className="flex items-center gap-3 px-2 py-1 rounded hover:bg-gray-50"
+          className="flex items-center gap-3 px-2 py-1 rounded hover:bg-gray-50 profile-button"
           aria-haspopup="true"
           aria-expanded={open}
         >
