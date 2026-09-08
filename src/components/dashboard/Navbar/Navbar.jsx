@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {Corporate, User} from "@/utility/TinyDB";
 import { usePathname } from 'next/navigation';
+import { MANAGE_ACCESS_CORPORATE_ID } from '@/utility/accessControl';
 
 export default function Navbar({ collapsed, setCollapsed, data }) {
   const [open, setOpen] = useState(false);
@@ -138,6 +139,15 @@ export default function Navbar({ collapsed, setCollapsed, data }) {
                       <i className="ri-team-line text-emerald-500 text-lg"></i>
                       <span>Teams</span>
                   </div>
+                  </Link>
+                )}
+
+                {Corporate?._id === MANAGE_ACCESS_CORPORATE_ID && (
+                  <Link href="/manage-access">
+                    <div className="dropdown-row">
+                      <i className="ri-shield-user-line text-indigo-500 text-lg"></i>
+                      <span>Manage Access</span>
+                    </div>
                   </Link>
                 )}
 
