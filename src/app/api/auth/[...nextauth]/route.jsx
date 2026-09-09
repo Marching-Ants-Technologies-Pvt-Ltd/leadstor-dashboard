@@ -3,7 +3,6 @@ import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
 import CredentialsProvider from "next-auth/providers/credentials";
 import oauth from "@/lib/conceptninjas/oauth";
-import { error } from "console";
 
 const handler = NextAuth({
     session: {
