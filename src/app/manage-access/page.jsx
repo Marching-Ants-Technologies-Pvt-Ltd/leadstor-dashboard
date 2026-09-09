@@ -141,7 +141,7 @@ export default function ManageAccess() {
     if (!hasAccess) {
     return (
         <div className="p-10 text-center text-gray-500">
-        You don't have permission to view this page.
+        You don&apos;t have permission to view this page.
         </div>
     );
     }
