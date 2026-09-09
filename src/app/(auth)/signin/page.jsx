@@ -29,7 +29,7 @@ export default function SignIn() {
 
     useEffect(() => {
         if (status === 'authenticated') {
-            router.push('/profile');
+            router.push('/');
         }
 
         if (status === 'unauthenticated') {
