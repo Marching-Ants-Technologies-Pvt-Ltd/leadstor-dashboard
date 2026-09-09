@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { AlertTriangle, PencilLine } from 'lucide-react'
 import { xFetch } from '@/utility/xFetch'
-import { toast, Bounce } from 'react-toastify'
+import { toast } from 'react-toastify'
 
 export default function CandidateFormModal({
   isOpen,
@@ -60,7 +61,6 @@ export default function CandidateFormModal({
     )]
   }
 
-  // Initialize formData — will be updated in useEffect for edit mode
   const [formData, setFormData] = useState({
     candidateName: '',
     candidateEmail: '',
@@ -91,9 +91,87 @@ export default function CandidateFormModal({
   const [locationsOptions, setLocationsOptions] = useState([])
   const [loadingOptions, setLoadingOptions] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [associatedCentersOptions, setAssociatedCentersOptions] = useState([]);
+  const [associatedCentersOptions, setAssociatedCentersOptions] = useState([])
+  const [sensitiveEditEnabled, setSensitiveEditEnabled] = useState(false)
+  const [showSensitiveEditWarning, setShowSensitiveEditWarning] = useState(false)
+  const [showSensitiveUpdateWarning, setShowSensitiveUpdateWarning] = useState(false)
 
-  // 1. Fetch dropdown options
+  const closeModal = () => {
+    setSensitiveEditEnabled(false)
+    setShowSensitiveEditWarning(false)
+    setShowSensitiveUpdateWarning(false)
+    onClose?.()
+  }
+
+  const hasSensitiveChanges = () => {
+    if (mode !== 'edit') return false
+
+    const sensitivePairs = [
+      ['candidateName', initialData.name],
+      ['candidateEmail', initialData.email],
+      ['candidateMobile', initialData.mobile],
+    ]
+
+    return sensitivePairs.some(([field, originalValue]) => {
+      const currentValue = String(formData[field] ?? '').trim()
+      const initialValue = String(originalValue ?? '').trim()
+      return currentValue !== initialValue
+    })
+  }
+
+  const submitCandidateUpdate = async ({ showToast = true } = {}) => {
+    const payload = new FormData()
+
+    Object.entries(formData).forEach(([key, val]) => {
+      if (key === 'candidateFile') {
+        if (val) {
+          payload.append('candidateFile', val)
+        }
+      } else if (Array.isArray(val)) {
+        val.forEach((v) => payload.append(`${key}[]`, v))
+      } else if (val !== null && val !== undefined && val !== '') {
+        payload.append(key, String(val))
+      }
+    })
+
+    if (mode === 'edit' && initialData.candidateId) {
+      payload.append('candidateId', String(initialData.candidateId))
+    }
+
+    console.log('Sending FormData:')
+    for (const [k, v] of payload.entries()) {
+      console.log(k, v instanceof File ? `[File: ${v.name}]` : v)
+    }
+
+    await xFetch({
+      path: '/services/job/addCandidate',
+      method: 'POST',
+      payload,
+      isFormData: true,
+    })
+
+    if (showToast) {
+      toast.success(mode === 'add' ? 'Added!' : 'Updated!')
+    }
+  }
+
+  const submitPlacementReadyUpdate = async () => {
+    setSubmitting(true)
+    try {
+      await submitCandidateUpdate({ showToast: false })
+
+      toast.success(mode === 'add' ? 'Added!' : 'Updated!')
+
+      onSuccess?.()
+      closeModal()
+    } catch (err) {
+      console.error('Submit error:', err)
+      toast.error('Save failed - check console')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   useEffect(() => {
     if (!isOpen) return
 
@@ -102,7 +180,7 @@ export default function CandidateFormModal({
       try {
         const tagsRes = await xFetch({
           path: '/services/job/getJobTags',
-          payload: { corporateId }
+          payload: { corporateId },
         })
         setJobTagsOptions(Array.isArray(tagsRes) ? tagsRes : tagsRes?.rows || tagsRes?.data || [])
 
@@ -110,15 +188,14 @@ export default function CandidateFormModal({
         setLocationsOptions(Array.isArray(locRes) ? locRes : locRes?.rows || locRes?.data || [])
 
         const centerRes = await xFetch({
-          path: '/services/profile/getAssociatedCenters'
-        });
+          path: '/services/profile/getAssociatedCenters',
+        })
 
         setAssociatedCentersOptions(
           Array.isArray(centerRes)
             ? centerRes
             : centerRes?.rows || centerRes?.data || []
-        );
-
+        )
       } catch (err) {
         toast.error('Failed to load dropdown options')
       } finally {
@@ -129,16 +206,14 @@ export default function CandidateFormModal({
     fetchOptions()
   }, [isOpen, corporateId])
 
-  // 2. Sync initialData when modal opens (critical for edit mode!)
   useEffect(() => {
     if (!isOpen) return
 
-    // Format dates if needed (your API sends "03 May 2023" → convert to "2023-05-03")
     const formatDate = (dateStr) => {
       if (!dateStr) return ''
       try {
         const [day, month, year] = dateStr.split(' ')
-        const monthNum = new Date(Date.parse(month + " 1, 2020")).getMonth() + 1
+        const monthNum = new Date(Date.parse(`${month} 1, 2020`)).getMonth() + 1
         return `${year}-${String(monthNum).padStart(2, '0')}-${day.padStart(2, '0')}`
       } catch {
         return ''
@@ -199,10 +274,23 @@ export default function CandidateFormModal({
       expectedCTC: initialData.expectedCTC || '',
       remarks: initialData.remarks || '',
       receiveJobOpportunities: initialData.receiveJobOpportunities || 'Yes',
-      candidateFile: null, // file cannot be pre-filled
+      candidateFile: null,
       associatedCenters: initialData.associatedCenters || '',
     })
-  }, [isOpen, mode, initialData, jobTagsOptions]) // ← re-run when initialData changes (edit mode)
+  }, [isOpen, mode, initialData, jobTagsOptions])
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSensitiveEditEnabled(false)
+      setShowSensitiveEditWarning(false)
+      setShowSensitiveUpdateWarning(false)
+      return
+    }
+
+    setSensitiveEditEnabled(false)
+    setShowSensitiveEditWarning(false)
+    setShowSensitiveUpdateWarning(false)
+  }, [isOpen, mode, initialData?.candidateId])
 
   const handleChange = (e) => {
     const { name, value, type, files, multiple } = e.target
@@ -223,76 +311,68 @@ export default function CandidateFormModal({
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setSubmitting(true)
 
-    try {
-        const payload = new FormData()
-
-        Object.entries(formData).forEach(([key, val]) => {
-        if (key === 'candidateFile') {
-            if (val) {
-            payload.append('candidateFile', val)
-            }
-        } else if (Array.isArray(val)) {
-            val.forEach(v => payload.append(`${key}[]`, v))
-        } else if (val !== null && val !== undefined && val !== '') {
-            payload.append(key, String(val))
-        }
-        })
-
-        if (mode === 'edit' && initialData.candidateId) {
-        payload.append('candidateId', String(initialData.candidateId))
-        }
-
-        // DEBUG: see exactly what's sent
-        console.log('Sending FormData:')
-        for (let [k, v] of payload.entries()) {
-        console.log(k, v instanceof File ? `[File: ${v.name}]` : v)
-        }
-
-        await xFetch({
-        path: '/services/job/addCandidate',
-        method: 'POST',
-        payload,
-        isFormData: true,
-        })
-
-        toast.success(mode === 'add' ? 'Added!' : 'Updated!')
-        onSuccess()
-        onClose()
-    } catch (err) {
-        console.error('Submit error:', err)
-        toast.error('Save failed - check console')
-    } finally {
-        setSubmitting(false)
+    if (mode === 'edit' && sensitiveEditEnabled && hasSensitiveChanges()) {
+      setShowSensitiveUpdateWarning(true)
+      return
     }
-    }
+
+    await submitPlacementReadyUpdate()
+  }
 
   if (!isOpen) return null
+
+  const sensitiveFieldsLocked = mode === 'edit' && !sensitiveEditEnabled
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 overflow-y-auto p-4">
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col">
-        {/* Header - matches Update Lead style */}
         <div className="bg-blue-600 text-white px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-md">
           <h2 className="text-xl font-semibold">
             {mode === 'add' ? 'Add Candidate Details' : 'Update Candidate Details'}
           </h2>
           <button
-            onClick={onClose}
+            onClick={closeModal}
             className="text-white hover:text-gray-200 text-3xl leading-none"
           >
             ×
           </button>
         </div>
 
-        {/* Body */}
         <div className="flex-1 overflow-y-auto p-6">
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* CANDIDATE DETAILS SECTION */}
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
               <h3 className="text-lg font-bold text-gray-800 mb-5 uppercase tracking-wide">
                 CANDIDATE DETAILS
               </h3>
+
+              {mode === 'edit' && (
+                <div className="mb-5 flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 font-semibold text-amber-900">
+                      <AlertTriangle size={18} />
+                      Sensitive fields are locked
+                    </div>
+                    <p className="mt-1 text-sm text-amber-800">
+                      Name, email, and mobile are used across payment and batch management.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowSensitiveEditWarning(true)}
+                    disabled={sensitiveEditEnabled}
+                    className={`inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
+                      sensitiveEditEnabled
+                        ? 'cursor-default bg-emerald-100 text-emerald-800'
+                        : 'bg-amber-600 text-white hover:bg-amber-700'
+                    }`}
+                  >
+                    <PencilLine size={16} />
+                    {sensitiveEditEnabled ? 'Sensitive Editing Enabled' : 'Edit Sensitive Details'}
+                  </button>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -304,10 +384,10 @@ export default function CandidateFormModal({
                     name="candidateName"
                     value={formData.candidateName}
                     onChange={handleChange}
-                    disabled={mode === 'edit'}
-                    title={mode === 'edit' ? 'This field cannot be edited' : ''}
+                    disabled={sensitiveFieldsLocked}
+                    title={sensitiveFieldsLocked ? 'Click Edit Sensitive Details to enable this field' : ''}
                     className={`w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      mode === 'edit' ? 'cursor-not-allowed bg-gray-100 text-gray-500' : ''
+                      sensitiveFieldsLocked ? 'cursor-not-allowed bg-gray-100 text-gray-500' : ''
                     }`}
                   />
                 </div>
@@ -321,10 +401,10 @@ export default function CandidateFormModal({
                     name="candidateMobile"
                     value={formData.candidateMobile}
                     onChange={handleChange}
-                    disabled={mode === 'edit'}
-                    title={mode === 'edit' ? 'This field cannot be edited' : ''}
+                    disabled={sensitiveFieldsLocked}
+                    title={sensitiveFieldsLocked ? 'Click Edit Sensitive Details to enable this field' : ''}
                     className={`w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      mode === 'edit' ? 'cursor-not-allowed bg-gray-100 text-gray-500' : ''
+                      sensitiveFieldsLocked ? 'cursor-not-allowed bg-gray-100 text-gray-500' : ''
                     }`}
                   />
                 </div>
@@ -338,10 +418,10 @@ export default function CandidateFormModal({
                     name="candidateEmail"
                     value={formData.candidateEmail}
                     onChange={handleChange}
-                    disabled={mode === 'edit'}
-                    title={mode === 'edit' ? 'This field cannot be edited' : ''}
+                    disabled={sensitiveFieldsLocked}
+                    title={sensitiveFieldsLocked ? 'Click Edit Sensitive Details to enable this field' : ''}
                     className={`w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      mode === 'edit' ? 'cursor-not-allowed bg-gray-100 text-gray-500' : ''
+                      sensitiveFieldsLocked ? 'cursor-not-allowed bg-gray-100 text-gray-500' : ''
                     }`}
                   />
                 </div>
@@ -380,7 +460,6 @@ export default function CandidateFormModal({
                 </div>
               </div>
 
-              {/* Course Dates */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Course Start Date</label>
@@ -405,7 +484,6 @@ export default function CandidateFormModal({
               </div>
             </div>
 
-            {/* SALES / JOB UPDATE SECTION */}
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
               <h3 className="text-lg font-bold text-gray-800 mb-5 uppercase tracking-wide">
                 JOB / PLACEMENT UPDATE
@@ -467,72 +545,68 @@ export default function CandidateFormModal({
                   </div>
                 </div>
 
-                {/* Job Tags & Locations - full width */}
                 <div className="col-span-2">
                   <div>
-                        <label className="block text-sm font-medium text-gray-700">Job Tags</label>
-                        <select
-                            name="jobTags"
-                            multiple
-                            value={formData.jobTags || []}
-                            onChange={handleChange}
-                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-teal-500 focus:border-teal-500 h-32"
-                        >
-                            {jobTagsOptions.map((tag, index) => (
-                            <option key={`${getJobTagValue(tag)}-${index}`} value={getJobTagValue(tag)}>
-                                {getJobTagLabel(tag)}
-                            </option>
-                            ))}
-                        </select>
-                        <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700">Job Tags</label>
+                    <select
+                      name="jobTags"
+                      multiple
+                      value={formData.jobTags || []}
+                      onChange={handleChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-teal-500 focus:border-teal-500 h-32"
+                    >
+                      {jobTagsOptions.map((tag, index) => (
+                        <option key={`${getJobTagValue(tag)}-${index}`} value={getJobTagValue(tag)}>
+                          {getJobTagLabel(tag)}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
+                  </div>
                 </div>
 
                 <div className="col-span-2">
                   <div>
-                        <label className="block text-sm font-medium text-gray-700">Expected Location Preference</label>
-                        <select
-                            name="expectedLocationPreference"
-                            multiple
-                            value={formData.expectedLocationPreference || []}
-                            onChange={handleChange}
-                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-teal-500 focus:border-teal-500 h-32"
-                        >
-                            {locationsOptions.map((loc) => (
-                            <option key={loc.value} value={loc.value}>
-                                {loc.text}
-                            </option>
-                            ))}
-                        </select>
-                        <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700">Expected Location Preference</label>
+                    <select
+                      name="expectedLocationPreference"
+                      multiple
+                      value={formData.expectedLocationPreference || []}
+                      onChange={handleChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-teal-500 focus:border-teal-500 h-32"
+                    >
+                      {locationsOptions.map((loc) => (
+                        <option key={loc.value} value={loc.value}>
+                          {loc.text}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
+                  </div>
                 </div>
 
                 <div className="col-span-2">
                   <div>
-                        <label className="block text-sm font-medium text-gray-700">Associated Centers</label>
-                        <select
-                          name="associatedCenters"
-                          value={formData.associatedCenters || ''}
-                          onChange={handleChange}
-                          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-teal-500 focus:border-teal-500"
+                    <label className="block text-sm font-medium text-gray-700">Associated Centers</label>
+                    <select
+                      name="associatedCenters"
+                      value={formData.associatedCenters || ''}
+                      onChange={handleChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-teal-500 focus:border-teal-500"
+                    >
+                      <option value="">-- Select Associated Center --</option>
+                      {associatedCentersOptions.map((center) => (
+                        <option
+                          key={center.id}
+                          value={center.associatedCenter}
                         >
-                          <option value="">-- Select Associated Center --</option>
-
-                          {associatedCentersOptions.map((center) => (
-                            <option
-                              key={center.id}
-                              value={center.associatedCenter}
-                            >
-                              {center.associatedCenter}
-                            </option>
-                          ))}
-                        </select>
-                        <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
-                    </div>
+                          {center.associatedCenter}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
-                {/* More fields */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Last Organization Name</label>
                   <input
@@ -563,8 +637,6 @@ export default function CandidateFormModal({
                   <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
                 </div>
 
-                {/* ... add remaining fields similarly ... */}
-
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Remarks</label>
                   <textarea
@@ -594,11 +666,10 @@ export default function CandidateFormModal({
               </div>
             </div>
 
-            {/* Footer */}
             <div className="flex justify-end gap-4 pt-6 border-t">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={closeModal}
                 disabled={submitting}
                 className="px-8 py-2.5 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium rounded-md transition-colors disabled:opacity-50"
               >
@@ -618,8 +689,96 @@ export default function CandidateFormModal({
             </div>
           </form>
         </div>
+
+        {showSensitiveEditWarning && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">
+            <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+              <div className="flex items-start gap-3 rounded-t-2xl border-b border-amber-100 bg-amber-50 px-6 py-4">
+                <div className="rounded-full bg-amber-100 p-2 text-amber-700">
+                  <AlertTriangle size={20} />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-lg font-semibold text-gray-900">Edit Sensitive Details</h4>
+                  <p className="mt-1 text-sm text-gray-600">
+                    Editing name, email, or mobile is not recommended.
+                  </p>
+                </div>
+              </div>
+
+              <div className="px-6 py-5">
+                <p className="text-sm leading-6 text-gray-700">
+                  These values affect payment and batch management. If you still want to continue, click proceed anyway.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-3 border-t bg-gray-50 px-6 py-4">
+                <button
+                  type="button"
+                  onClick={() => setShowSensitiveEditWarning(false)}
+                  className="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSensitiveEditEnabled(true)
+                    setShowSensitiveEditWarning(false)
+                  }}
+                  className="rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700"
+                >
+                  Proceed anyway
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showSensitiveUpdateWarning && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">
+            <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+              <div className="flex items-start gap-3 rounded-t-2xl border-b border-red-100 bg-red-50 px-6 py-4">
+                <div className="rounded-full bg-red-100 p-2 text-red-700">
+                  <AlertTriangle size={20} />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-lg font-semibold text-gray-900">Confirm Sensitive Update</h4>
+                  <p className="mt-1 text-sm text-gray-600">
+                    Changing this information will reflect on Payment page and batch management.
+                  </p>
+                </div>
+              </div>
+
+              <div className="px-6 py-5">
+                <p className="text-sm leading-6 text-gray-700">
+                  Please double-check the new values before continuing. You can cancel if you want to review them again.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-3 border-t bg-gray-50 px-6 py-4">
+                <button
+                  type="button"
+                  onClick={() => setShowSensitiveUpdateWarning(false)}
+                  className="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => {
+                    setShowSensitiveUpdateWarning(false)
+                    submitPlacementReadyUpdate()
+                  }}
+                  className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                >
+                  Update anyway
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
 }
-
