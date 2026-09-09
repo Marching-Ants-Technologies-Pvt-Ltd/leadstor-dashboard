@@ -121,279 +121,260 @@ export default function SupportPage() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-6xl">
-                {/* Header */}
-                <div className="mb-8">
-                    <div className="mb-16 flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center">
-                            <Image
-                                src="/icons/leadstor.png"
-                                alt='Leadstor Logo'
-                                width={200}
-                                height={200}
-                                className='h-7 w-7'
-                            />
+
+        <main>
+            {/* Header */}
+            <div className="mb-8">
+                <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+                    How can we help?
+                </h1>
+
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
+                    Have a question or running into an issue? Tell us what
+                    happened and our support team will help you get things
+                    sorted.
+                </p>
+            </div>
+
+            {/* Main */}
+            <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+                {/* LEFT */}
+                <div className="space-y-5">
+                    {/* Business */}
+                    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                            Your account
+                        </p>
+
+                        <div className="mt-4 flex items-center gap-4">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-lg font-bold text-blue-700">
+                                {business.name.charAt(0)}
+                            </div>
+
+                            <div className="min-w-0">
+                                <h2 className="truncate text-lg font-bold text-slate-900">
+                                    {business.name}
+                                </h2>
+
+                                <p className="text-sm text-slate-500">
+                                    {business.plan}
+                                </p>
+                            </div>
                         </div>
 
-                        <span className=" text-lg font-medium text-slate-500">Leadstor</span>
+                        <div className="my-5 h-px bg-slate-100" />
+
+                        <div className="space-y-4">
+                            <AccountRow
+                                label="Account ID"
+                                value={business.accountId}
+                            />
+
+                            <AccountRow
+                                label="Email"
+                                value={business.email}
+                            />
+                        </div>
                     </div>
 
-                    <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-                        How can we help?
-                    </h1>
+                    {/* Quick support */}
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                        <p className="text-sm font-semibold text-slate-900">
+                            Need a quick answer?
+                        </p>
 
-                    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
-                        Have a question or running into an issue? Tell us what
-                        happened and our support team will help you get things
-                        sorted.
+                        <p className="mt-1 text-xs leading-5 text-slate-500">
+                            You can reach our support team directly through
+                            WhatsApp or email.
+                        </p>
+
+                        <div className="mt-4 grid gap-2">
+                            <SupportCard
+                                icon={<FiMessageCircle size={17} />}
+                                title="WhatsApp Support"
+                                description="Usually the fastest way to reach us"
+                                action="Chat with us"
+                                href="https://wa.me/919999999999"
+                            />
+
+                            <SupportCard
+                                icon={<FiMail size={17} />}
+                                title="Email Support"
+                                description="For detailed queries and requests"
+                                action="Send email"
+                                href="mailto:support@leadstor.com"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Response time */}
+                    <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5">
+                        <div className="flex gap-3">
+                            <div className="mt-0.5 text-blue-600">
+                                <FiClock size={18} />
+                            </div>
+
+                            <div>
+                                <p className="text-sm font-semibold text-blue-900">
+                                    Typical response time
+                                </p>
+
+                                <p className="mt-1 text-xs leading-5 text-blue-700">
+                                    Our team generally responds within a few
+                                    hours during business hours.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* RIGHT */}
+                <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <form onSubmit={handleSubmit}>
+                        {/* Form header */}
+                        <div className="border-b border-slate-100 p-6">
+                            <h2 className="text-lg font-bold text-slate-900">
+                                Contact support
+                            </h2>
+
+                            <p className="mt-1 text-sm text-slate-500">
+                                Choose a category and describe your issue.
+                            </p>
+                        </div>
+
+                        <div className="p-6">
+                            {/* Category */}
+                            <div>
+                                <label className="mb-3 block text-sm font-semibold text-slate-800">
+                                    What can we help you with?
+                                </label>
+
+                                <div className="grid gap-2 sm:grid-cols-2">
+                                    {supportCategories.map((item) => (
+                                        <CategoryOption
+                                            key={item.title}
+                                            title={item.title}
+                                            description={item.description}
+                                            icon={item.icon}
+                                            selected={
+                                                category === item.title
+                                            }
+                                            onClick={() =>
+                                                setCategory(item.title)
+                                            }
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Subject */}
+                            <div className="mt-6">
+                                <label
+                                    htmlFor="subject"
+                                    className="mb-2 block text-sm font-semibold text-slate-800"
+                                >
+                                    Subject
+                                </label>
+
+                                <input
+                                    id="subject"
+                                    name="subject"
+                                    type="text"
+                                    value={subject}
+                                    onChange={(event) =>
+                                        setSubject(event.target.value)
+                                    }
+                                    placeholder="Briefly describe your issue"
+                                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                                />
+                            </div>
+
+                            {/* Message */}
+                            <div className="mt-5">
+                                <label
+                                    htmlFor="message"
+                                    className="mb-2 block text-sm font-semibold text-slate-800"
+                                >
+                                    Tell us more
+                                </label>
+
+                                <textarea
+                                    id="message"
+                                    name="message"
+                                    rows={6}
+                                    value={message}
+                                    onChange={(event) =>
+                                        setMessage(event.target.value)
+                                    }
+                                    placeholder="Please describe the problem you're facing. Include any relevant details that might help us understand the issue."
+                                    className="w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                                />
+
+                                <p className="mt-2 text-xs text-slate-400">
+                                    The more details you provide, the faster
+                                    we can help.
+                                </p>
+                            </div>
+
+                            {/* Submit */}
+                            <button
+                                type="submit"
+                                disabled={
+                                    !category ||
+                                    !subject.trim() ||
+                                    !message.trim()
+                                }
+                                className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                <FiSend size={16} />
+                                Send to Support
+                            </button>
+
+                            <p className="mt-3 text-center text-[11px] text-slate-400">
+                                Your request will be associated with your
+                                Leadstor account.
+                            </p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {/* FAQ */}
+            <div className="mt-10">
+                <div className="mb-4">
+                    <h2 className="text-lg font-bold text-slate-900">
+                        Frequently asked questions
+                    </h2>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                        Some quick answers to common questions.
                     </p>
                 </div>
 
-                {/* Main */}
-                <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
-                    {/* LEFT */}
-                    <div className="space-y-5">
-                        {/* Business */}
-                        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                                Your account
-                            </p>
+                <div className="grid gap-3 md:grid-cols-2">
+                    <FaqItem
+                        question="How long does it take to restore access after payment?"
+                        answer="Once your payment is verified, access is generally restored shortly afterwards. Manual verification can take a few hours."
+                    />
 
-                            <div className="mt-4 flex items-center gap-4">
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-lg font-bold text-purple-700">
-                                    {business.name.charAt(0)}
-                                </div>
+                    <FaqItem
+                        question="I made a payment but my account is still locked"
+                        answer="Please submit your UTR through the payment verification page. You can also contact our support team on WhatsApp."
+                    />
 
-                                <div className="min-w-0">
-                                    <h2 className="truncate text-lg font-bold text-slate-900">
-                                        {business.name}
-                                    </h2>
+                    <FaqItem
+                        question="Where can I find my UTR number?"
+                        answer="Your UTR or transaction ID can usually be found in your bank statement, UPI app or payment confirmation."
+                    />
 
-                                    <p className="text-sm text-slate-500">
-                                        {business.plan}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="my-5 h-px bg-slate-100" />
-
-                            <div className="space-y-4">
-                                <AccountRow
-                                    label="Account ID"
-                                    value={business.accountId}
-                                />
-
-                                <AccountRow
-                                    label="Email"
-                                    value={business.email}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Quick support */}
-                        <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                            <p className="text-sm font-semibold text-slate-900">
-                                Need a quick answer?
-                            </p>
-
-                            <p className="mt-1 text-xs leading-5 text-slate-500">
-                                You can reach our support team directly through
-                                WhatsApp or email.
-                            </p>
-
-                            <div className="mt-4 grid gap-2">
-                                <SupportCard
-                                    icon={<FiMessageCircle size={17} />}
-                                    title="WhatsApp Support"
-                                    description="Usually the fastest way to reach us"
-                                    action="Chat with us"
-                                    href="https://wa.me/919999999999"
-                                />
-
-                                <SupportCard
-                                    icon={<FiMail size={17} />}
-                                    title="Email Support"
-                                    description="For detailed queries and requests"
-                                    action="Send email"
-                                    href="mailto:support@leadstor.com"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Response time */}
-                        <div className="rounded-2xl border border-purple-100 bg-purple-50 p-5">
-                            <div className="flex gap-3">
-                                <div className="mt-0.5 text-purple-600">
-                                    <FiClock size={18} />
-                                </div>
-
-                                <div>
-                                    <p className="text-sm font-semibold text-purple-900">
-                                        Typical response time
-                                    </p>
-
-                                    <p className="mt-1 text-xs leading-5 text-purple-700">
-                                        Our team generally responds within a few
-                                        hours during business hours.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* RIGHT */}
-                    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-                        <form onSubmit={handleSubmit}>
-                            {/* Form header */}
-                            <div className="border-b border-slate-100 p-6">
-                                <h2 className="text-lg font-bold text-slate-900">
-                                    Contact support
-                                </h2>
-
-                                <p className="mt-1 text-sm text-slate-500">
-                                    Choose a category and describe your issue.
-                                </p>
-                            </div>
-
-                            <div className="p-6">
-                                {/* Category */}
-                                <div>
-                                    <label className="mb-3 block text-sm font-semibold text-slate-800">
-                                        What can we help you with?
-                                    </label>
-
-                                    <div className="grid gap-2 sm:grid-cols-2">
-                                        {supportCategories.map((item) => (
-                                            <CategoryOption
-                                                key={item.title}
-                                                title={item.title}
-                                                description={item.description}
-                                                icon={item.icon}
-                                                selected={
-                                                    category === item.title
-                                                }
-                                                onClick={() =>
-                                                    setCategory(item.title)
-                                                }
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Subject */}
-                                <div className="mt-6">
-                                    <label
-                                        htmlFor="subject"
-                                        className="mb-2 block text-sm font-semibold text-slate-800"
-                                    >
-                                        Subject
-                                    </label>
-
-                                    <input
-                                        id="subject"
-                                        name="subject"
-                                        type="text"
-                                        value={subject}
-                                        onChange={(event) =>
-                                            setSubject(event.target.value)
-                                        }
-                                        placeholder="Briefly describe your issue"
-                                        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-purple-500 focus:ring-4 focus:ring-purple-100"
-                                    />
-                                </div>
-
-                                {/* Message */}
-                                <div className="mt-5">
-                                    <label
-                                        htmlFor="message"
-                                        className="mb-2 block text-sm font-semibold text-slate-800"
-                                    >
-                                        Tell us more
-                                    </label>
-
-                                    <textarea
-                                        id="message"
-                                        name="message"
-                                        rows={6}
-                                        value={message}
-                                        onChange={(event) =>
-                                            setMessage(event.target.value)
-                                        }
-                                        placeholder="Please describe the problem you're facing. Include any relevant details that might help us understand the issue."
-                                        className="w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-purple-500 focus:ring-4 focus:ring-purple-100"
-                                    />
-
-                                    <p className="mt-2 text-xs text-slate-400">
-                                        The more details you provide, the faster
-                                        we can help.
-                                    </p>
-                                </div>
-
-                                {/* Submit */}
-                                <button
-                                    type="submit"
-                                    disabled={
-                                        !category ||
-                                        !subject.trim() ||
-                                        !message.trim()
-                                    }
-                                    className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    <FiSend size={16} />
-                                    Send to Support
-                                </button>
-
-                                <p className="mt-3 text-center text-[11px] text-slate-400">
-                                    Your request will be associated with your
-                                    Leadstor account.
-                                </p>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                {/* FAQ */}
-                <div className="mt-10">
-                    <div className="mb-4">
-                        <h2 className="text-lg font-bold text-slate-900">
-                            Frequently asked questions
-                        </h2>
-
-                        <p className="mt-1 text-sm text-slate-500">
-                            Some quick answers to common questions.
-                        </p>
-                    </div>
-
-                    <div className="grid gap-3 md:grid-cols-2">
-                        <FaqItem
-                            question="How long does it take to restore access after payment?"
-                            answer="Once your payment is verified, access is generally restored shortly afterwards. Manual verification can take a few hours."
-                        />
-
-                        <FaqItem
-                            question="I made a payment but my account is still locked"
-                            answer="Please submit your UTR through the payment verification page. You can also contact our support team on WhatsApp."
-                        />
-
-                        <FaqItem
-                            question="Where can I find my UTR number?"
-                            answer="Your UTR or transaction ID can usually be found in your bank statement, UPI app or payment confirmation."
-                        />
-
-                        <FaqItem
-                            question="Can I request a feature?"
-                            answer="Absolutely. Select Feature Request above and tell us what you'd like Leadstor to do."
-                        />
-                    </div>
-                </div>
-
-                {/* Footer */}
-                <div className="mt-8 text-center text-xs text-slate-400">
-                    © {new Date().getFullYear()} Leadstor. All rights reserved.
+                    <FaqItem
+                        question="Can I request a feature?"
+                        answer="Absolutely. Select Feature Request above and tell us what you'd like Leadstor to do."
+                    />
                 </div>
             </div>
-        </div>
+        </main>
+
     );
 }
 
@@ -435,15 +416,15 @@ function CategoryOption({
             type="button"
             onClick={onClick}
             className={`group rounded-xl border p-4 text-left transition ${selected
-                    ? "border-purple-400 bg-purple-50 ring-2 ring-purple-100"
-                    : "border-slate-200 hover:border-purple-300 hover:bg-purple-50/40"
+                ? "border-blue-400 bg-blue-50 ring-2 ring-blue-100"
+                : "border-slate-200 hover:border-blue-300 hover:bg-blue-50/40"
                 }`}
         >
             <div className="flex items-start gap-3">
                 <div
                     className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition ${selected
-                            ? "bg-purple-100 text-purple-600"
-                            : "bg-slate-100 text-slate-500 group-hover:bg-purple-100 group-hover:text-purple-600"
+                        ? "bg-blue-100 text-blue-600"
+                        : "bg-slate-100 text-slate-500 group-hover:bg-blue-100 group-hover:text-blue-600"
                         }`}
                 >
                     {icon}
@@ -461,7 +442,7 @@ function CategoryOption({
 
                 {selected && (
                     <FiCheckCircle
-                        className="ml-auto shrink-0 text-purple-600"
+                        className="ml-auto shrink-0 text-blue-600"
                         size={17}
                     />
                 )}
@@ -495,7 +476,7 @@ function SupportCard({
                 </p>
             </div>
 
-            <span className="flex items-center gap-1 text-[11px] font-semibold text-purple-600">
+            <span className="flex items-center gap-1 text-[11px] font-semibold text-blue-600">
                 {action}
                 <FiArrowRight size={12} />
             </span>
@@ -508,7 +489,7 @@ function SupportCard({
                 href={href}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-3 rounded-xl border border-slate-200 p-3 transition hover:border-purple-200 hover:bg-purple-50/40"
+                className="flex items-center gap-3 rounded-xl border border-slate-200 p-3 transition hover:border-blue-200 hover:bg-blue-50/40"
             >
                 {content}
             </a>
@@ -519,7 +500,7 @@ function SupportCard({
         <button
             type="button"
             onClick={onClick}
-            className="flex w-full items-center gap-3 rounded-xl border border-slate-200 p-3 text-left transition hover:border-purple-200 hover:bg-purple-50/40"
+            className="flex w-full items-center gap-3 rounded-xl border border-slate-200 p-3 text-left transition hover:border-blue-200 hover:bg-blue-50/40"
         >
             {content}
         </button>
@@ -621,7 +602,7 @@ function SupportSubmitted({
                         </p>
 
                         {category && (
-                            <span className="mt-2 inline-flex rounded-full bg-purple-50 px-2.5 py-1 text-[11px] font-medium text-purple-700">
+                            <span className="mt-2 inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-700">
                                 {category}
                             </span>
                         )}

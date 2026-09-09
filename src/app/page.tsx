@@ -79,8 +79,8 @@ export default function Home() {
 
       page = validPathList[result.page] ?? '/support';
 
-      // Intentional - remove it after testing
-      page = '/payment-overdue';
+      // Only for testing
+      if (result.page === 'LEAD') page = '/payment-overdue';
 
     } catch (error) {
       console.error('CHECK:NEXT_PAGE', error)
@@ -101,10 +101,16 @@ export default function Home() {
         return;
       }
 
-      // router.push('/leads');
-      console.log('We have session buddy', sessionData);
+      // First remove the session data cached in localstorage 
+      localStorage.removeItem('CurrentSessionData');
+      localStorage.removeItem('LeadOwnersById');
+      localStorage.removeItem('LeadsPerPage');
+      localStorage.removeItem('TotalLeads');
+      localStorage.removeItem('LeadsCurrentPage');
 
+      // Verify the session status now
       setLabel('Verifying Your Credentials')
+
       const data = JSON.parse(JSON.stringify(sessionData));
       let _next = await whatNext(data?.user?.cn_token ?? '')
       console.log('Next', _next);
@@ -115,13 +121,8 @@ export default function Home() {
         _next = await setCurrentSessionData(data);
       }
 
-      // Clean session cache from local before sending to signIn page
+      // Signout before sending to signIn page
       if (_next.page === "/signin") {
-        localStorage.removeItem('CurrentSessionData');
-        localStorage.removeItem('LeadOwnersById');
-        localStorage.removeItem('LeadsPerPage');
-        localStorage.removeItem('TotalLeads');
-        localStorage.removeItem('LeadsCurrentPage');
         signOut();
       }
 
