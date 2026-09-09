@@ -26,7 +26,18 @@ export default function ClientLayout({ children }) {
         router.push('/signin');
         return;
       }
+
+      // Get current session data from localstorage
       const data = JSON.parse(localStorage.getItem('CurrentSessionData'));
+      
+      // User is trying to access directly, without proper session initialization
+      // So redirect back to main controller to verify and set session properly.
+      // This is to avoid direct access when payment overdue.
+      if (!data) {
+        router.push('/');
+        return;
+      }
+
       setSession(data);
     };
 
