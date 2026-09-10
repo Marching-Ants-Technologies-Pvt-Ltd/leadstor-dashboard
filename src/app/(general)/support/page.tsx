@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image";
-import { FormEvent, ReactNode, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useState } from "react";
 import {
     FiAlertCircle,
     FiArrowRight,
@@ -16,6 +16,8 @@ import {
     FiPhone,
     FiSend,
 } from "react-icons/fi";
+
+import { WHATSAPP_SUPPORT, EMAIL_SUPPORT } from "@/data/constant";
 
 type SupportCategory =
     | "Technical Issue"
@@ -47,13 +49,6 @@ interface SupportCardProps {
     href?: string;
     onClick?: () => void;
 }
-
-const business: BusinessInfo = {
-    name: "XYZ Pvt. Ltd.",
-    plan: "Leadstor SaaS",
-    email: "admin@xyz.com",
-    accountId: "LS-10293",
-};
 
 const supportCategories: {
     title: SupportCategory;
@@ -87,11 +82,47 @@ const supportCategories: {
         },
     ];
 
+export function decodeJwt<T = Record<string, unknown>>(token: string): T {
+    if (!token || typeof token !== "string") {
+        throw new Error("JWT token must be a non-empty string");
+    }
+
+    const parts = token.split(".");
+
+    if (parts.length !== 3) {
+        throw new Error("Invalid JWT format");
+    }
+
+    const payload = parts[1];
+
+    try {
+        // JWT uses Base64URL encoding.
+        const base64 = payload
+            .replace(/-/g, "+")
+            .replace(/_/g, "/")
+            .padEnd(Math.ceil(payload.length / 4) * 4, "=");
+
+        const json = Buffer.from(base64, "base64").toString("utf-8");
+
+        return JSON.parse(json) as T;
+    } catch {
+        throw new Error("Unable to decode JWT payload");
+    }
+}
+
 export default function SupportPage() {
     const [category, setCategory] = useState<SupportCategory | null>(null);
     const [subject, setSubject] = useState<string>("");
     const [message, setMessage] = useState<string>("");
     const [submitted, setSubmitted] = useState<boolean>(false);
+
+    const [status, setStatus] = useState<string>('checking');
+    const [business, setBusiness] = useState<BusinessInfo>({
+        name: "XYZ Pvt. Ltd.",
+        plan: "Leadstor SaaS",
+        email: "admin@xyz.com",
+        accountId: "LS-10293",
+    });
 
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -111,6 +142,31 @@ export default function SupportPage() {
         setSubmitted(true);
     };
 
+    useEffect(() => {
+        const init = async () => {
+
+            try {
+                const token: string = localStorage.getItem('LEADSTOR_SESSION_TOKEN') || "";
+                const data = decodeJwt(token);
+                setBusiness({
+                    name: `${data.recruiter_name} ${data.recruiter_last_name}`.trim(),
+                    plan: String(data.corporate_name),
+                    email: String(data.corporateEmail),
+                    accountId: `LS-${data.corporate_type}-${data.corporateId}`,
+                });
+
+                setStatus('Found');
+
+            } catch (error) {
+                console.error('[JWT]', error);
+                setStatus('Failed');
+            }
+        }
+
+        init();
+
+    }, [])
+
     if (submitted) {
         return (
             <SupportSubmitted
@@ -119,7 +175,6 @@ export default function SupportPage() {
             />
         );
     }
-
     return (
 
         <main>
@@ -147,9 +202,13 @@ export default function SupportPage() {
                         </p>
 
                         <div className="mt-4 flex items-center gap-4">
-                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-lg font-bold text-blue-700">
-                                {business.name.charAt(0)}
-                            </div>
+                            <Image
+                                src={`https://api.dicebear.com/10.x/initials/png?size=50&seed=${business.name}`}
+                                alt={business.name}
+                                width={50}
+                                height={50}
+                                className="h-12 w-12 rounded-xl"
+                            />
 
                             <div className="min-w-0">
                                 <h2 className="truncate text-lg font-bold text-slate-900">
@@ -194,7 +253,7 @@ export default function SupportPage() {
                                 title="WhatsApp Support"
                                 description="Usually the fastest way to reach us"
                                 action="Chat with us"
-                                href="https://wa.me/919999999999"
+                                href={WHATSAPP_SUPPORT}
                             />
 
                             <SupportCard
@@ -202,7 +261,7 @@ export default function SupportPage() {
                                 title="Email Support"
                                 description="For detailed queries and requests"
                                 action="Send email"
-                                href="mailto:support@leadstor.com"
+                                href={`mailto:${EMAIL_SUPPORT}`}
                             />
                         </div>
                     </div>
@@ -340,13 +399,13 @@ export default function SupportPage() {
             </div>
 
             {/* FAQ */}
-            <div className="mt-10">
-                <div className="mb-4">
-                    <h2 className="text-lg font-bold text-slate-900">
+            <div className="mt-28 border-t">
+                <div className="mb-4 mt-12">
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                         Frequently asked questions
-                    </h2>
+                    </h1>
 
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
                         Some quick answers to common questions.
                     </p>
                 </div>
@@ -378,10 +437,6 @@ export default function SupportPage() {
     );
 }
 
-
-/* ============================================================
-   Components
-============================================================ */
 
 function AccountRow({
     label,
@@ -609,7 +664,7 @@ function SupportSubmitted({
                     </div>
 
                     <a
-                        href="https://wa.me/919999999999"
+                        href={WHATSAPP_SUPPORT}
                         target="_blank"
                         rel="noreferrer"
                         className="mt-6 inline-flex items-center gap-2 rounded-xl bg-green-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-green-700"
@@ -619,8 +674,7 @@ function SupportSubmitted({
                     </a>
 
                     <p className="mt-5 text-xs text-slate-400">
-                        If your issue is urgent, contacting us on WhatsApp may
-                        be faster.
+                        If your issue is urgent, contacting us on WhatsApp maybe faster.
                     </p>
                 </div>
             </div>
