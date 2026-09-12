@@ -6,9 +6,102 @@ import { xFetch } from "@/utility/xFetch";
 
 const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 
+const getJoditConfig = (heightPx, joditInstanceRef) => ({
+    height: heightPx,
+    toolbarAdaptive: false,
+    enableDragAndDropFileToEditor: false, 
+    buttons:
+        "source,|,bold,italic,underline,|,ul,ol,|,link,image,table,|,align,left,center,right,justify",
+    buttonsMD:
+        "source,|,bold,italic,underline,|,ul,ol,|,link,image,table,|,align,left,center,right,justify",
+    buttonsSM:
+        "source,|,bold,italic,underline,|,ul,ol,|,link,image,table",
+    buttonsXS:
+        "source,|,bold,italic,underline,|,ul,ol,|,link,image",
+    uploader: {
+        url: `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/profile/uploadTemplateImage`,
+        format: "json",
+        headers: {
+            Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("access_token") : ""}`,
+        },
+        filesVariableName: () => "uploadTemplateImage",
+        isSuccess: (resp) => resp?.success === true,
+        getMessage: (resp) => resp?.msg || "Upload failed",
+        process: (resp) => resp,
+        defaultHandlerSuccess: function (resp) {
+            const instance = joditInstanceRef.current;
+            if (resp?.url && instance?.selection) {
+                instance.selection.insertImage(resp.url, null, 250);
+            } else {
+                toast.error(resp?.msg || "Image upload failed");
+            }
+        },
+        error: (e) => {
+            console.error("Jodit image upload error:", e);
+            toast.error("Image upload failed. Please try again.");
+        },
+    },
+    events: {
+        afterInit: (instance) => {
+            joditInstanceRef.current = instance;
+        },
+        paste: function (event) {
+            let imageFile = null;
+
+            if (event.clipboardData?.files?.length > 0 && event.clipboardData.files[0].type.startsWith("image/")) {
+                imageFile = event.clipboardData.files[0];
+            } else {
+                const items = event.clipboardData?.items;
+                if (items) {
+                    for (let i = 0; i < items.length; i++) {
+                        if (items[i].type.startsWith("image/")) {
+                            imageFile = items[i].getAsFile();
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (imageFile) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                const formData = new FormData();
+                formData.append("uploadTemplateImage", imageFile);
+
+                const token = localStorage.getItem("access_token");
+
+                fetch(`${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/profile/uploadTemplateImage`, {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${token}` },
+                    body: formData,
+                })
+                    .then((res) => res.json())
+                    .then((resp) => {
+                        const instance = joditInstanceRef.current;
+                        if (resp?.success && resp?.url && instance?.selection) {
+                            instance.selection.insertImage(resp.url, null, 250);
+                        } else {
+                            toast.error(resp?.msg || "Image upload failed");
+                        }
+                    })
+                    .catch((err) => {
+                        console.error("Paste image upload error:", err);
+                        toast.error("Image upload failed. Please try again.");
+                    });
+
+                return false;
+            }
+        },
+    },
+});
+
 export default function EmailTemplateManager() {
     const editorRef = useRef(null);
     const contentRef = useRef("");
+
+    const joditInstanceRef = useRef(null); 
+
 
     const [loading, setLoading] = useState(true);
     const [templates, setTemplates] = useState([]);
@@ -282,18 +375,7 @@ export default function EmailTemplateManager() {
                 <JoditEditor
                     ref={editorRef}
                     value={content}
-                    config={{
-                    height: 320,
-                    toolbarAdaptive: false,
-                    buttons:
-                        "source,|,bold,italic,underline,|,ul,ol,|,link,image,table,|,align,left,center,right,justify",
-                    buttonsMD:
-                        "source,|,bold,italic,underline,|,ul,ol,|,link,image,table,|,align,left,center,right,justify",
-                    buttonsSM:
-                        "source,|,bold,italic,underline,|,ul,ol,|,link,image,table",
-                    buttonsXS:
-                        "source,|,bold,italic,underline,|,ul,ol,|,link,image",
-                    }}
+                    config={getJoditConfig(320, joditInstanceRef)}
                     onBlur={(newContent) => {
                         contentRef.current = newContent || "";
                         setContent(newContent || "");
@@ -376,18 +458,7 @@ export default function EmailTemplateManager() {
                     <JoditEditor
                         ref={editorRef}
                         value={content}
-                        config={{
-                        height: 300,
-                        toolbarAdaptive: false,
-                        buttons:
-                            "source,|,bold,italic,underline,|,ul,ol,|,link,image,table,|,align,left,center,right,justify",
-                        buttonsMD:
-                            "source,|,bold,italic,underline,|,ul,ol,|,link,image,table,|,align,left,center,right,justify",
-                        buttonsSM:
-                            "source,|,bold,italic,underline,|,ul,ol,|,link,image,table",
-                        buttonsXS:
-                            "source,|,bold,italic,underline,|,ul,ol,|,link,image",
-                        }}
+                        config={getJoditConfig(300, joditInstanceRef)}
                         onBlur={(newContent) => {
                             contentRef.current = newContent || "";
                             setContent(newContent || "");
