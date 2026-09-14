@@ -18,29 +18,32 @@ const getJoditConfig = (heightPx, joditInstanceRef) => ({
         "source,|,bold,italic,underline,|,ul,ol,|,link,image,table",
     buttonsXS:
         "source,|,bold,italic,underline,|,ul,ol,|,link,image",
-    uploader: {
-        url: `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/profile/uploadTemplateImage`,
-        format: "json",
-        headers: {
-            Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("access_token") : ""}`,
-        },
-        filesVariableName: () => "uploadTemplateImage",
-        isSuccess: (resp) => resp?.success === true,
-        getMessage: (resp) => resp?.msg || "Upload failed",
-        process: (resp) => resp,
-        defaultHandlerSuccess: function (resp) {
-            const instance = joditInstanceRef.current;
-            if (resp?.url && instance?.selection) {
-                instance.selection.insertImage(resp.url, null, 250);
-            } else {
-                toast.error(resp?.msg || "Image upload failed");
-            }
-        },
-        error: (e) => {
-            console.error("Jodit image upload error:", e);
-            toast.error("Image upload failed. Please try again.");
-        },
-    },
+
+    // UPLOAD FEATURE ON TOOLBAR ICON
+    // uploader: {
+    //     url: `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/profile/uploadTemplateImage`,
+    //     format: "json",
+    //     headers: {
+    //         Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("access_token") : ""}`,
+    //     },
+    //     filesVariableName: () => "uploadTemplateImage",
+    //     isSuccess: (resp) => resp?.success === true,
+    //     getMessage: (resp) => resp?.msg || "Upload failed",
+    //     process: (resp) => resp,
+    //     defaultHandlerSuccess: function (resp) {
+    //         const instance = joditInstanceRef.current;
+    //         if (resp?.url && instance?.selection) {
+    //             instance.selection.insertImage(resp.url, null, 250);
+    //         } else {
+    //             toast.error(resp?.msg || "Image upload failed");
+    //         }
+    //     },
+    //     error: (e) => {
+    //         console.error("Jodit image upload error:", e);
+    //         toast.error("Image upload failed. Please try again.");
+    //     },
+    // },
+    
     events: {
         afterInit: (instance) => {
             joditInstanceRef.current = instance;
