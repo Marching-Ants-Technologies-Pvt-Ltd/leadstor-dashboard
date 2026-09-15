@@ -12,6 +12,7 @@ import {
 } from '@/utility/TinyDB';
 import ManualCandidate from '@/components/dashboard/Lead/ManualCandidate.jsx';
 import SendEmailModal from '@/components/dashboard/Lead/SendEmailModal.jsx';
+import SendWhatsAppModal from '@/components/dashboard/Lead/SendWhatsAppModal.jsx';
 import BulkUpdateDrawer from '@/components/dashboard/Lead/BulkUpdateDrawer';
 import DailyReportModal from '@/components/dashboard/Lead/DailyReportModal.jsx';
 import ExportEnquiriesModal from '@/components/dashboard/Lead/ExportEnquiriesModal.jsx';
@@ -44,6 +45,7 @@ export default function LeadsMenu({
 
   const [showManual, setShowManual] = useState(false);
   const [showSendEmail, setShowSendEmail] = useState(false);
+  const [showSendWhatsApp, setShowSendWhatsApp] = useState(false);
   const [showBulkUpdateDrawer, setShowBulkUpdateDrawer] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [dailyReport, setDailyReport] = useState(false);
@@ -260,6 +262,15 @@ export default function LeadsMenu({
   const selectedLeadEmails = leads
     .filter(l => selectedLeadIds.includes(l.invitationId))
     .map(l => l.emailId)
+    .filter(Boolean);
+
+  const selectedLeadCandidates = leads.filter((lead) =>
+    selectedLeadIds.includes(lead.invitationId)
+  );
+
+  const selectedLeadMobiles = selectedLeadCandidates
+    .flatMap((lead) => [lead.mobile, lead.altMobile])
+    .map((value) => String(value || '').trim())
     .filter(Boolean);
 
   /* ---------- STATUS COUNTS ---------- */
@@ -523,6 +534,13 @@ export default function LeadsMenu({
                         <i className="ri-mail-line text-indigo-500" />
                         Send Email
                       </button>
+                      <button className="drop-item" onClick={() => {
+                        if (!selectedLeadIds.length) toast.error('Select at least one record');
+                        else setShowSendWhatsApp(true);
+                      }}>
+                        <i className="ri-whatsapp-line text-green-600" />
+                        Send WhatsApp Message
+                      </button>
                       <button
                         className="drop-item"
                         onClick={() => {
@@ -585,6 +603,16 @@ export default function LeadsMenu({
           ids={selectedLeadIds}
           emails={selectedLeadEmails}
           corporateId={User?.corporateId}
+        />
+      )}
+      {showSendWhatsApp && (
+        <SendWhatsAppModal
+          isOpen
+          onClose={() => setShowSendWhatsApp(false)}
+          ids={selectedLeadIds}
+          candidates={selectedLeadCandidates}
+          mobileNumbers={selectedLeadMobiles}
+          corporateId={branchId || User?.corporateId}
         />
       )}
       {showBulkUpdateDrawer && (
