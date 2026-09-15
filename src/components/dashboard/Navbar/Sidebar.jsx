@@ -110,12 +110,12 @@ export default function Sidebar({ collapsed, setCollapsed, userRole }) {
           )}
         </button>
 
-        <a href='https://leadstor.in/contact' target='_blank' className='text-slate-600 hover:bg-blue-50 hover:text-blue-600 group h-10 flex items-center gap-2 px-4 mt-1 rounded-lg text-sm cursor-pointer transition'>
+        <Link href='/support' target='_blank' className='text-slate-600 hover:bg-blue-50 hover:text-blue-600 group h-10 flex items-center gap-2 px-4 mt-1 rounded-lg text-sm cursor-pointer transition'>
           <i className="ri-customer-service-2-line text-[18px]"></i>
           {!collapsed && (
             <span className='font-semibold'>Need Help?</span>
           )}
-        </a>
+        </Link>
 
       </div>
     </aside>

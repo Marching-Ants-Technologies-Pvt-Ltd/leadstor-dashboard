@@ -73,7 +73,15 @@ interface UpiDetailsProps {
     invoice: string;
 }
 
-export default function PaymentOverduePage() {
+export default function CommonPaymentPage({
+    title,
+    description,
+    payType
+}: {
+    title: string;
+    description: string;
+    payType: "overdue" | "upcoming"
+}) {
     const [paymentMode, setPaymentMode] = useState<PaymentMode>(null);
     const [utr, setUtr] = useState<string>("");
     const [submitted, setSubmitted] = useState<boolean>(false);
@@ -191,13 +199,11 @@ export default function PaymentOverduePage() {
             <div className="mb-8">
 
                 <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-                    Payment required to restore access
+                    {title}
                 </h1>
 
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
-                    Your Leadstor subscription is currently overdue. Complete
-                    the payment below and submit your UTR to get your account
-                    access restored.
+                    {description}
                 </p>
 
             </div>
@@ -205,26 +211,46 @@ export default function PaymentOverduePage() {
             <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
                 {/* LEFT SIDE */}
                 <div className="space-y-5">
-                    {/* Overdue alert */}
-                    <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
-                        <div className="flex gap-3">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
-                                <FiAlertCircle size={19} />
-                            </div>
+                    {/* Alert */}
+                    {payType === 'overdue' ? (
+                        <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
+                            <div className="flex gap-3">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
+                                    <FiAlertCircle size={19} />
+                                </div>
 
-                            <div>
-                                <p className="font-semibold text-red-900">
-                                    Payment overdue
-                                </p>
+                                <div>
+                                    <p className="font-semibold text-red-900">
+                                        Payment overdue
+                                    </p>
 
-                                <p className="mt-1 text-sm leading-5 text-red-700">
-                                    Your access to Leadstor has been temporarily
-                                    restricted because your subscription payment
-                                    is overdue.
-                                </p>
+                                    <p className="mt-1 text-sm leading-5 text-red-700">
+                                        Your access to Leadstor has been temporarily
+                                        restricted because your subscription payment
+                                        is overdue.
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    ) : (
+                        <div className="rounded-2xl border border-orange-200 bg-orange-50 p-5">
+                            <div className="flex gap-3">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-100 text-orange-600">
+                                    <FiAlertCircle size={19} />
+                                </div>
+
+                                <div>
+                                    <p className="font-semibold text-orange-900">
+                                        Upcoming Payment
+                                    </p>
+
+                                    <p className="mt-1 text-sm leading-5 text-orange-700">
+                                        Your Leadstor subscription payment is due soon. Pay by the due date to avoid any interruption in access.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Business information */}
                     {status === 'Found' ? (
@@ -411,7 +437,7 @@ export default function PaymentOverduePage() {
                                                         setPaymentMode("upi")
                                                     }
                                                 />
-                                                
+
                                                 <PaymentMethod
                                                     title="Bank Transfer"
                                                     description="Pay using NEFT / IMPS / RTGS"

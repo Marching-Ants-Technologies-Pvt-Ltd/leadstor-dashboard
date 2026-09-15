@@ -2,17 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { getSession } from 'next-auth/react';
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+
+import { toast } from "react-toastify";
+import { xFetch } from '@/utility/xFetch';
+import { User } from '@/utility/TinyDB';
+
 import LeadsTable from '@/components/dashboard/Lead/LeadTable';
 import LeadsMenu from '@/components/dashboard/Lead/LeadMenu';
 import LeadsTablePagination from '@/components/dashboard/Lead/Pagination';
 import FilterDrawer from '@/components/dashboard/Lead/AdvanceFilter';
 import AppliedFilters from '@/components/dashboard/Lead/AppliedFilters';
-import { xFetch } from '@/utility/xFetch';
 import AddLead from '@/components/dashboard/Lead/AddLead';
-import { Corporate, Test as SessionTest, User } from '@/utility/TinyDB';
 
 export default function Leads() {
     const searchParams = useSearchParams();
@@ -216,11 +216,8 @@ export default function Leads() {
         router.push(`/payments?corporateId=${branchId}${testParams}`);
     };
 
-
-
     return (
         <div className="flex-1 overflow-hidden flex flex-col">
-            <ToastContainer position="top-right" />
 
             {openAddLead ? (
                 <AddLead onClose={() => setOpenAddLead(false)} />
