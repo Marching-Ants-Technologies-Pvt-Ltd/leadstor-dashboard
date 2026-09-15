@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { SessionProvider, getSession } from "next-auth/react";
 import { LeadsCurrentPage, LeadFilters, LeadSearch, User } from '@/utility/TinyDB';
 import ReminderPopup from '@/components/ReminderPopup';
+import CorporateInstallmentReminder from './CorporateInstallmentReminder';
 
 export default function ClientLayout({ children }) {
   const [session, setSession] = useState(null);
@@ -93,7 +94,10 @@ export default function ClientLayout({ children }) {
           <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} userRole={User?.role || ''} />
 
           <div className="flex flex-col flex-1 min-w-0">
-            {/* Navbar / Header */}
+            {/* Subscription Reminder */}
+            <CorporateInstallmentReminder />
+            
+            {/* Navbar */}
             <Navbar data={session} collapsed={collapsed} setCollapsed={setCollapsed} />
 
             <div className="flex-1 overflow-hidden flex flex-col">

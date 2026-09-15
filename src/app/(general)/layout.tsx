@@ -15,15 +15,21 @@ export default function GeneralLayout({
     const router = useRouter();
     const [ready, setReady] = useState<boolean>(false);
 
-    const ping = useCallback(async (token: string) => {
+    const checkOverdueStatus = useCallback(async (token: string) => {
 
-        let code = "FAILED";
+        let _data = {
+            expiryDate: "",
+            isExpired: false
+        };
+
+        if (token.length < 30) return _data;
+
         try {
             const myHeaders = new Headers();
             myHeaders.append("Content-Type", "application/json");
             myHeaders.append("Authorization", "Bearer " + token);
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/profile/ping`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/profile/paymentOverdue`, {
                 method: "GET",
                 headers: myHeaders,
                 redirect: "follow"
@@ -33,12 +39,15 @@ export default function GeneralLayout({
                 throw new Error(`Failed to fetch overdue balance EC-${response.status}`);
             }
 
-            code = "OK";
+            const data = await response.json();
+
+            _data.expiryDate = data?.expiryDate || '';
+            _data.isExpired = data?.isExpired || false;
 
         } catch (error) {
             console.error('[LEADSTOR]', error);
         } finally {
-            return { code }
+            return _data
         }
     }, [])
 
@@ -53,10 +62,29 @@ export default function GeneralLayout({
             }
 
             const data = JSON.parse(JSON.stringify(sessionData));
-            const status = await ping(data?.user?.cn_token);
 
-            if (status.code !== "OK") {
-                router.push('/');
+            if (window.location.pathname.startsWith('/pay/')) {
+                const status = await checkOverdueStatus(data?.user?.cn_token);
+
+                // No due? Always take back to main page
+                if (status.expiryDate.length < 3) {
+                    router.push('/');
+                    return;
+                }
+
+                // Check if plan is expired but user trying to visit subscription payment screen
+                // Then always redirect to /pay/overdue 
+                if (status.isExpired && window.location.pathname === '/pay/subscription') {
+                    router.push('/pay/overdue');
+                    return;
+                }
+
+                // Vice-versa
+                if (!status.isExpired && window.location.pathname === '/pay/overdue') {
+                    router.push('/pay/subscription');
+                    return;
+                }
+
             }
 
             localStorage.setItem('LEADSTOR_SESSION_TOKEN', data?.user?.cn_token);
@@ -65,7 +93,7 @@ export default function GeneralLayout({
 
         fetchSession();
 
-    }, [router, ping]);
+    }, [router, checkOverdueStatus]);
 
     return (
         <SessionProvider>

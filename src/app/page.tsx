@@ -9,7 +9,7 @@ const validPathList: any = {
   'SIGNIN': "/signin",
   'VALIDATE_EMAIL': '/account-verification',
   'LEAD': '/leads',
-  'PAYMENT_DUE': '/payment-overdue',
+  'PAYMENT_DUE': '/pay/overdue',
 };
 
 export default function Home() {
@@ -40,6 +40,7 @@ export default function Home() {
       };
 
       localStorage.setItem('CurrentSessionData', JSON.stringify(data));
+      localStorage.setItem('access_token', (info?.user?.cn_token || ''));
 
       const userRoles = Array.isArray(data['user']?.role)
         ? data['user'].role.map((r: any) => String(r).trim())
@@ -52,6 +53,7 @@ export default function Home() {
     } catch (error) {
       console.error('CHECK:NEXT_PAGE', error)
     } finally {
+      
       return { page }
     }
   }, [])
@@ -80,7 +82,7 @@ export default function Home() {
       page = validPathList[result.page] ?? '/support';
 
       // Only for testing
-      if (result.page === 'LEAD') page = '/payment-overdue';
+      // if (result.page === 'LEAD') page = '/payment-overdue';
 
     } catch (error) {
       console.error('CHECK:NEXT_PAGE', error)
