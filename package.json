@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "clean": "rmdir /s /q .next",
     "code": "code . && next dev --turbo"
   },
   "dependencies": {
