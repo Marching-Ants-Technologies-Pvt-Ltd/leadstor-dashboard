@@ -231,7 +231,7 @@ export default function JoineePaymentForm({ payment_id }) {
         //Update Currency Code On UI
         if (key === 'candidate_currency') {
             let cnc = currency?.[value] ?? {};
-            setCurrentCurrency(decodeHtml(cnc?.currency_html_code ?? '?'));
+            setCurrentCurrency(decodeHtml(cnc?.currency_html_code ?? '₹'));
         }
 
         // Update Standard Fee If Course is Changed
@@ -306,6 +306,8 @@ export default function JoineePaymentForm({ payment_id }) {
         const fixed = {
             amount: `${data?.amount ?? '0'}`,
             date: data?.date ?? null,
+            paidAmount: `${data?.paidAmount ?? data?.paid_amount ?? ''}`,
+            paidDate: data?.paidDate ?? data?.paid_date ?? '',
             status: `${data?.status ?? '0'}`,
             refNum: `${data?.refNo ?? ''}`,
             receiptDate: normalizedReceiptDate,
@@ -601,7 +603,7 @@ export default function JoineePaymentForm({ payment_id }) {
 
             // Set Current Currency
             let cnc = currencyList?.[candidateInfo?.candidate_currency ?? 'x'] ?? {};
-            setCurrentCurrency(cnc?.currency_html_code ?? '?');
+            setCurrentCurrency(cnc?.currency_html_code ?? '₹');
         })
         .catch(error => {
             console.error('Error loading initial data', error);

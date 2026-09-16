@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 export default function JoineePaymentAnalytics({
     agreedPayment = 0,
     installments = {},
-    currency = '?',
+    currency = '₹',
     onChat = () => { },
     gotoNotes = () => { },
     onSave = () => { }

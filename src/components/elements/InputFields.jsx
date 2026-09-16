@@ -38,7 +38,7 @@ export function InputTextWithIcon({
             </label>
             <div className="relative">
                 <span className="absolute left-0 top-0 bottom-0 w-11 flex items-center justify-center bg-gray-100 border border-r-0 rounded-l-md font-semibold text-gray-700">
-                    {prefix}
+                    {prefix ?? ''}
                 </span>
 
                 {readOnly ? (
