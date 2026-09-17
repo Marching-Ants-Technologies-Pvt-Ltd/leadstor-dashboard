@@ -65,11 +65,6 @@ export default function JoineeInstallments({
                                 currencyIcon={currency}
                                 amount={value?.amount ?? 0}
                                 date={formatInstallmentDate(value?.date ?? '-')}
-                                initialAgreedAmount={
-                                value?.initialAgreedAmount && Number(value.initialAgreedAmount) !== 0
-                                    ? value.initialAgreedAmount
-                                    : value?.amount ?? ''
-                                }
                                 initialAgreedPaymentDate={formatInstallmentDate(value?.initialAgreedPaymentDate ?? value?.date ?? '')}
                                 status={value?.status ?? '0'}
                                 refNo={value?.refNum ?? ''}
@@ -103,11 +98,11 @@ export default function JoineeInstallments({
 }
 
 // Helper Components
-function InstallmentCard({ counter = '1', currencyIcon = '₹', amount, date, initialAgreedAmount = '', initialAgreedPaymentDate = '', status = '0', refNo = '', receiptDate = '', onDelete = (e) => { }, onEdit = (e) => { } }) {
+function InstallmentCard({ counter = '1', currencyIcon = '₹', amount, date, initialAgreedPaymentDate = '', status = '0', refNo = '', receiptDate = '', onDelete = (e) => { }, onEdit = (e) => { } }) {
 
     let statusText = STATUS?.[status] ?? 'Not Paid';
     let statusInt = Number(status || 0);
-    const hasPaidInfo = (statusInt > 0 && statusInt < 10) && (initialAgreedAmount !== '' || initialAgreedPaymentDate !== '');
+    const hasPaidInfo = (statusInt > 0 && statusInt < 10) && (initialAgreedPaymentDate !== '');
     return (
         <div className="flex rounded-xl border bg-white overflow-hidden mt-2">
 
@@ -123,14 +118,14 @@ function InstallmentCard({ counter = '1', currencyIcon = '₹', amount, date, in
                 </button>
             </div>
 
-            <div className="flex-1 px-5 py-3 space-y-1 text-sm" onClick={() => onEdit({ count: parseInt(counter), amount, date, initialAgreedAmount, initialAgreedPaymentDate, status, refNo, receipt_date: receiptDate, type: `Edit #${counter}`, currencyIcon })}>
+            <div className="flex-1 px-5 py-3 space-y-1 text-sm" onClick={() => onEdit({ count: parseInt(counter), amount, date, initialAgreedPaymentDate, status, refNo, receipt_date: receiptDate, type: `Edit #${counter}`, currencyIcon })}>
                 <div className="flex justify-between">
                     <span className="text-gray-500">Amount</span>
                     <span title='Click to edit' className="font-semibold cursor-pointer">{currencyIcon}{amount}</span>
                 </div>
 
                 <div className="flex justify-between">
-                    <span className="text-gray-500">Date</span>
+                    <span className="text-gray-500">Payment Date</span>
                     <span title='Click to edit' className="cursor-pointer">{date}</span>
                 </div>
 
@@ -150,11 +145,6 @@ function InstallmentCard({ counter = '1', currencyIcon = '₹', amount, date, in
 
                 {hasPaidInfo && (
                     <>
-                        <div className="flex justify-between">
-                            <span className="text-gray-500">Agreed Payment Amount</span>
-                            <span title='Click to edit' className="font-semibold cursor-pointer">{currencyIcon}{initialAgreedAmount}</span>
-                        </div>
-
                         <div className="flex justify-between">
                             <span className="text-gray-500">Agreed Payment Date</span>
                             <span title='Click to edit' className="cursor-pointer">{initialAgreedPaymentDate}</span>
