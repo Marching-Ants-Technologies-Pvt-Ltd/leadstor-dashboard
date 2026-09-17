@@ -14,11 +14,12 @@ export default function Preferences() {
         let isMounted = true;
 
         xFetch({
-            path: '/getCorporatePreferences.php'
+            path: '/services/profile/api.php?x=getCorporatePreferences'
         })
             .then(data => {
                 if (!isMounted) return;
-                setReceiptEmailEnabled(Boolean(Number(data?.payment_tracking)));            })
+                setReceiptEmailEnabled(Boolean(Number(data?.paymentTracking))); // was data?.payment_tracking
+            })
             .catch(error => {
                 console.error('Error loading payment preferences', error);
                 toast.error('Unable to load preferences, Try again');
@@ -42,7 +43,7 @@ export default function Preferences() {
 
         xFetch({
             method: 'POST',
-            path: '/updateCorporatePreferences.php',
+            path: '/services/profile/api.php?x=updateCorporatePreferences',
             isFormData: true,
             payload: new URLSearchParams({
                 payment_tracking: nextValue ? 1 : 0
