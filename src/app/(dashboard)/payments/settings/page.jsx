@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { RiArrowDownSLine, RiArrowRightSLine } from "react-icons/ri";
 
 const AdmissionStatuses = dynamic(() => import('@/components/dashboard/Payments/Settings/AdmissionStatuses'), { ssr: false });
+const Preferences = dynamic(() => import('@/components/dashboard/Payments/Settings/Preferences'), { ssr: false });
 
 export default function PaymentsSettings() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function PaymentsSettings() {
       key: "paymentSetup",
       children: [
         { key: "admissionStatuses", label: "Admission Statuses" },
+        { key: "preferences", label: "Preferences" },
       ]
     }
   ];
@@ -26,6 +28,8 @@ export default function PaymentsSettings() {
     switch (activeMenu) {
       case "admissionStatuses":
         return <AdmissionStatuses />;
+      case "preferences":
+        return <Preferences />;
       default:
         return <div className="text-gray-500">Select an item from the menu</div>;
     }
