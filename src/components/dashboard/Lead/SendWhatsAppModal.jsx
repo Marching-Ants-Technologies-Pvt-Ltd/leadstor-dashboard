@@ -12,24 +12,6 @@ function normalizeProvider(value) {
   return String(value || '').trim().toLowerCase();
 }
 
-// function extractWhatsAppProvider(details = {}) {
-//   return (
-//     details?.whatsapp_provider ||
-//     details?.whatsappProvider ||
-//     details?.whatsapp_vendor ||
-//     details?.whatsappVendor ||
-//     details?.whatsapp_api_provider ||
-//     details?.whatsappApiProvider ||
-//     details?.provider ||
-//     Corporate?.whatsapp_provider ||
-//     Corporate?.whatsappProvider ||
-//     Corporate?.whatsapp_vendor ||
-//     Corporate?.whatsappVendor ||
-//     Corporate?.provider ||
-//     ''
-//   );
-// }
-
 function extractWhatsAppProvider(details = {}) {
 
   // check payload_template
