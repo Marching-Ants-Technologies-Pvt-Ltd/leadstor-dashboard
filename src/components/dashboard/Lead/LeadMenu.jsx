@@ -539,7 +539,7 @@ export default function LeadsMenu({
                         else setShowSendWhatsApp(true);
                       }}>
                         <i className="ri-whatsapp-line text-green-600" />
-                        Send WhatsApp Message
+                        Send WATI Message
                       </button>
                       <button
                         className="drop-item"
@@ -675,7 +675,11 @@ export default function LeadsMenu({
           padding: 8px 10px;
           border-radius: 8px;
           font-size: 13px;
+          line-height: 1.2;
+          white-space: normal;
+          text-align: left;
           cursor: pointer;
+          width: 100%;
         }
         .drop-item:hover {
           background: #f8fafc;

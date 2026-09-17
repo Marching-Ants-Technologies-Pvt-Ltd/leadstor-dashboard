@@ -179,6 +179,8 @@ export default function SendWhatsAppModal({
   const [templateName, setTemplateName] = useState('');
   const [customParams, setCustomParams] = useState([]);
   const [message, setMessage] = useState(MESSAGE_FALLBACK);
+  const [templateSearch, setTemplateSearch] = useState('');
+  const [templateDropdownOpen, setTemplateDropdownOpen] = useState(false);
   const [provider, setProvider] = useState('');
   const [providerLabel, setProviderLabel] = useState('WhatsApp');
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
@@ -235,6 +237,8 @@ export default function SendWhatsAppModal({
     setTemplateName('');
     setCustomParams([]);
     setMessage(MESSAGE_FALLBACK);
+    setTemplateSearch('');
+    setTemplateDropdownOpen(false);
     setTemplates([]);
     setProvider('');
     setProviderLabel('WhatsApp');
@@ -312,26 +316,48 @@ export default function SendWhatsAppModal({
     setMessage(selectedTemplate.body || MESSAGE_FALLBACK);
   }, [templateId, templates]);
 
+  const visibleTemplates = useMemo(() => {
+    const q = templateSearch.trim().toLowerCase();
+
+    if (!q || q.length < 2) {
+      return templates;
+    }
+
+    return templates.filter((template) => {
+      const name = String(template?.templateName || '').toLowerCase();
+      return name.includes(q);
+    });
+  }, [templates, templateSearch]);
+
   if (!isOpen) return null;
 
   const hasSelection = selectedInvitationIds.length > 0 || selectedMobiles.length > 0;
   const canSend = hasSelection && templateId && message.trim() && !isSending;
 
-  const handleTemplateChange = (e) => {
+  const handleTemplateSearchChange = (e) => {
     const value = e.target.value;
-    setTemplateId(value);
+    setTemplateSearch(value);
+    setTemplateDropdownOpen(true);
+  };
 
-    if (!value) {
-      setTemplateName('');
-      setCustomParams([]);
-      setMessage(MESSAGE_FALLBACK);
-      return;
-    }
+  const handleTemplateSelect = (template) => {
+    if (!template) return;
 
-    const selectedTemplate = templates.find((template) => String(template.templateId) === String(value));
-    setTemplateName(selectedTemplate?.templateName || '');
-    setCustomParams(selectedTemplate?.customParams || []);
-    setMessage(selectedTemplate?.body || MESSAGE_FALLBACK);
+    setTemplateId(template.templateId);
+    setTemplateName(template.templateName || '');
+    setTemplateSearch(template.templateName || '');
+    setCustomParams(template.customParams || []);
+    setMessage(template.body || MESSAGE_FALLBACK);
+    setTemplateDropdownOpen(false);
+  };
+
+  const clearTemplateSelection = () => {
+    setTemplateId('');
+    setTemplateName('');
+    setTemplateSearch('');
+    setCustomParams([]);
+    setMessage(MESSAGE_FALLBACK);
+    setTemplateDropdownOpen(true);
   };
 
   const updateCustomParam = (index, value) => {
@@ -416,10 +442,13 @@ export default function SendWhatsAppModal({
       });
 
       const success =
+        response?.result === 1 ||
+        response?.result === true ||
         response?.status === true ||
         response?.status === 'success' ||
         response?.status === 'OK' ||
         response?.sent > 0 ||
+        response?.local_message_id ||
         response?.message_id ||
         response?.success === true;
 
@@ -516,19 +545,85 @@ export default function SendWhatsAppModal({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               WhatsApp Template <span className="text-red-500">*</span>
             </label>
-            <select
-              value={templateId}
-              onChange={handleTemplateChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-800 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition"
-              disabled={isLoadingProvider || isLoadingTemplates || isSending}
-            >
-              <option value="">{isLoadingTemplates ? 'Loading templates...' : TEMPLATE_PLACEHOLDER}</option>
-              {templates.map((template) => (
-                <option key={template.templateId} value={template.templateId}>
-                  {template.templateName}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <input
+                type="text"
+                value={templateName}
+                onFocus={() => setTemplateDropdownOpen(true)}
+                readOnly
+                placeholder={isLoadingTemplates ? 'Loading templates...' : TEMPLATE_PLACEHOLDER}
+                className="w-full px-4 py-3 pr-16 border border-gray-300 rounded-lg bg-white text-gray-800 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition cursor-pointer"
+                disabled={isLoadingProvider || isLoadingTemplates || isSending}
+                autoComplete="off"
+              />
+              {templateName && (
+                <button
+                  type="button"
+                  onClick={clearTemplateSelection}
+                  className="absolute right-10 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  disabled={isLoadingProvider || isLoadingTemplates || isSending}
+                  aria-label="Clear template selection"
+                >
+                  <i className="ri-close-line text-lg" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setTemplateDropdownOpen((open) => !open)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                disabled={isLoadingProvider || isLoadingTemplates || isSending}
+                aria-label="Toggle template list"
+              >
+                <i className={`ri-arrow-down-s-line text-xl transition-transform ${templateDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {templateDropdownOpen && !isLoadingTemplates && (
+                <div className="absolute z-20 mt-2 w-full rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
+                  <div className="p-3 border-b border-gray-100">
+                    <input
+                      type="text"
+                      value={templateSearch}
+                      onChange={handleTemplateSearchChange}
+                      placeholder="Search templates..."
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-800 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                      autoComplete="off"
+                      disabled={isLoadingProvider || isLoadingTemplates || isSending}
+                    />
+                    <div className="mt-2 text-xs text-gray-500">
+                      Click a template to load its message. Search starts filtering after 2 letters.
+                    </div>
+                  </div>
+
+                  <div className="max-h-56 overflow-y-auto">
+                    {visibleTemplates.length === 0 ? (
+                      <div className="px-4 py-3 text-sm text-gray-500">
+                        No templates match "{templateSearch.trim()}".
+                      </div>
+                    ) : (
+                      visibleTemplates.map((template) => (
+                        <button
+                          key={template.templateId}
+                          type="button"
+                          onClick={() => handleTemplateSelect(template)}
+                          className={`w-full px-4 py-3 text-left hover:bg-green-50 transition flex flex-col gap-1 ${
+                            String(template.templateId) === String(templateId) ? 'bg-green-50' : ''
+                          }`}
+                        >
+                          <span className="text-sm font-medium text-gray-800">
+                            {template.templateName}
+                          </span>
+                          {template.body && (
+                            <span className="text-xs text-gray-500 whitespace-pre-wrap">
+                              {template.body}
+                            </span>
+                          )}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div>
