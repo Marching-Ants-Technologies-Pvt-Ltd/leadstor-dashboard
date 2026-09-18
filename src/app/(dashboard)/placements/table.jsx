@@ -202,6 +202,7 @@ export default function PlacementReadyTable({
           <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-32">Course</th>
           <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-36">Course Start</th>
           <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-36">Course End</th>
+          <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-36">Batch</th>
           <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-36">Associated Center</th>
           <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-28">Job Status</th>
           <th className="p-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider min-w-28">Total Exp</th>
@@ -368,6 +369,22 @@ export default function PlacementReadyTable({
                 </td>
                 <td className="p-3 text-gray-600 align-top">{item.courseStartDate || '-'}</td>
                 <td className="p-3 text-gray-600 align-top">{item.courseEndDate || '-'}</td>
+                <td className="p-3 align-top">
+                  {item.batchNames ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {item.batchNames.split(',').map((batch, i) => (
+                        <span
+                          key={i}
+                          className="inline-flex items-center px-2.5 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full border border-blue-200"
+                        >
+                          {batch.trim()}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    '-'
+                  )}
+                </td>
                 <td className="p-3 text-gray-600 align-top">{item.associatedCenters || '-'}</td>
                 <td className="p-3 align-top">
                   <span className={`inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full ${

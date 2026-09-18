@@ -204,6 +204,7 @@ export default function PlacementReadyController() {
             'Year of Passing': c.yearOfPassing || '',
             'Current City': c.currentCity || '',
             'Job Profiles': formatArrayOrString(c.jobTags),
+            Batch: c.batchNames || '',
             'Placement Status': c.placementStatus || '',
             Resume: c.resumeName || '',
             Course: c.course || '',
