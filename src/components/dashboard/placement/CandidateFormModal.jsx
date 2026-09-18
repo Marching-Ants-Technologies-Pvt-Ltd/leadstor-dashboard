@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { AlertTriangle, PencilLine } from 'lucide-react'
+import { Info, PencilLine } from 'lucide-react'
 import { xFetch } from '@/utility/xFetch'
 import { toast } from 'react-toastify'
 
@@ -347,13 +347,13 @@ export default function CandidateFormModal({
               </h3>
 
               {mode === 'edit' && (
-                <div className="mb-5 flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 md:flex-row md:items-center md:justify-between">
+                <div className="mb-5 flex flex-col gap-3 rounded-lg border border-sky-200 bg-sky-50 px-4 py-4 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <div className="flex items-center gap-2 font-semibold text-amber-900">
-                      <AlertTriangle size={18} />
-                      Sensitive fields are locked
+                    <div className="flex items-center gap-2 font-semibold text-sky-900">
+                      <Info size={18} />
+                      Primary Details fields are locked
                     </div>
-                    <p className="mt-1 text-sm text-amber-800">
+                    <p className="mt-1 text-sm text-sky-800">
                       Name, email, and mobile are used across payment and batch management.
                     </p>
                   </div>
@@ -365,11 +365,11 @@ export default function CandidateFormModal({
                     className={`inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
                       sensitiveEditEnabled
                         ? 'cursor-default bg-emerald-100 text-emerald-800'
-                        : 'bg-amber-600 text-white hover:bg-amber-700'
+                        : 'bg-sky-600 text-white hover:bg-sky-700'
                     }`}
                   >
                     <PencilLine size={16} />
-                    {sensitiveEditEnabled ? 'Sensitive Editing Enabled' : 'Edit Sensitive Details'}
+                    {sensitiveEditEnabled ? 'Primary Details Editing Enabled' : 'Edit Primary Details'}
                   </button>
                 </div>
               )}
@@ -693,12 +693,12 @@ export default function CandidateFormModal({
         {showSensitiveEditWarning && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">
             <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
-              <div className="flex items-start gap-3 rounded-t-2xl border-b border-amber-100 bg-amber-50 px-6 py-4">
-                <div className="rounded-full bg-amber-100 p-2 text-amber-700">
-                  <AlertTriangle size={20} />
+              <div className="flex items-start gap-3 rounded-t-2xl border-b border-sky-100 bg-sky-50 px-6 py-4">
+                <div className="rounded-full bg-sky-100 p-2 text-sky-700">
+                  <Info size={20} />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-lg font-semibold text-gray-900">Edit Sensitive Details</h4>
+                  <h4 className="text-lg font-semibold text-gray-900">Edit Primary Details</h4>
                   <p className="mt-1 text-sm text-gray-600">
                     Editing name, email, or mobile is not recommended.
                   </p>
@@ -725,7 +725,7 @@ export default function CandidateFormModal({
                     setSensitiveEditEnabled(true)
                     setShowSensitiveEditWarning(false)
                   }}
-                  className="rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700"
+                  className="rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700"
                 >
                   Proceed anyway
                 </button>
@@ -737,12 +737,12 @@ export default function CandidateFormModal({
         {showSensitiveUpdateWarning && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">
             <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
-              <div className="flex items-start gap-3 rounded-t-2xl border-b border-red-100 bg-red-50 px-6 py-4">
-                <div className="rounded-full bg-red-100 p-2 text-red-700">
-                  <AlertTriangle size={20} />
+              <div className="flex items-start gap-3 rounded-t-2xl border-b border-sky-100 bg-sky-100 px-6 py-4">
+                <div className="rounded-full bg-sky-100 p-2 text-sky-700">
+                  <Info size={20} />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-lg font-semibold text-gray-900">Confirm Sensitive Update</h4>
+                  <h4 className="text-lg font-semibold text-gray-900">Confirm Primary Details Update</h4>
                   <p className="mt-1 text-sm text-gray-600">
                     Changing this information will reflect on Payment page and batch management.
                   </p>
@@ -770,7 +770,7 @@ export default function CandidateFormModal({
                     setShowSensitiveUpdateWarning(false)
                     submitPlacementReadyUpdate()
                   }}
-                  className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                  className="rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-50"
                 >
                   Update anyway
                 </button>
