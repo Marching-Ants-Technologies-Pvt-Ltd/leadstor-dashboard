@@ -311,9 +311,30 @@ export default function SendWhatsAppModal({
     });
   }, [templates, templateSearch]);
 
+  const resolvedMessage = useMemo(() => {
+    if (!message) return MESSAGE_FALLBACK;
+
+    let output = message;
+
+    customParams.forEach((param, index) => {
+      const value = String(param?.value || '').trim();
+      const name = String(param?.name || `param_${index + 1}`).trim();
+
+      output = output
+        .replaceAll(`{{${name}}}`, value)
+        .replaceAll(`{{ ${name} }}`, value)
+        .replaceAll(`{{${index + 1}}}`, value)
+        .replaceAll(`{{ ${index + 1} }}`, value);
+    });
+
+    return output;
+  }, [message, customParams]);
+
   if (!isOpen) return null;
 
-  const hasSelection = selectedInvitationIds.length > 0 || selectedMobiles.length > 0;
+  const hasSelection =
+    selectedInvitationIds.length > 0 || selectedMobiles.length > 0;
+
   const canSend = hasSelection && templateId && message.trim() && !isSending;
 
   const handleTemplateSearchChange = (e) => {
@@ -349,24 +370,6 @@ export default function SendWhatsAppModal({
       )
     );
   };
-
-  const resolvedMessage = useMemo(() => {
-    if (!message) return MESSAGE_FALLBACK;
-
-    let output = message;
-    customParams.forEach((param, index) => {
-      const value = String(param?.value || '').trim();
-      const name = String(param?.name || `param_${index + 1}`).trim();
-
-      output = output
-        .replaceAll(`{{${name}}}`, value)
-        .replaceAll(`{{ ${name} }}`, value)
-        .replaceAll(`{{${index + 1}}}`, value)
-        .replaceAll(`{{ ${index + 1} }}`, value);
-    });
-
-    return output;
-  }, [message, customParams]);
 
   const sendWhatsApp = async () => {
     if (!hasSelection) {
@@ -579,7 +582,7 @@ export default function SendWhatsAppModal({
                   <div className="max-h-56 overflow-y-auto">
                     {visibleTemplates.length === 0 ? (
                       <div className="px-4 py-3 text-sm text-gray-500">
-                        No templates match "{templateSearch.trim()}".
+                        No templates match &quot;{templateSearch.trim()}&quot;.
                       </div>
                     ) : (
                       visibleTemplates.map((template) => (
