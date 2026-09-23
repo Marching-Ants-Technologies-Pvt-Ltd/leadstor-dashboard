@@ -34,6 +34,7 @@ export default function Navbar({ collapsed, setCollapsed, data }) {
     '/teams': 'Teams',
     '/analytics/classic-analytics': 'Analytics',
     '/': 'Dashboard',
+    '/change-password': 'Change Password',
   };
 
   const currentTitle = pageTitles[pathname] 
@@ -132,6 +133,15 @@ export default function Navbar({ collapsed, setCollapsed, data }) {
                     <span>Profile</span>
                 </div>
                 </Link>
+
+                {( userRoles.includes("Admin") || userRoles.includes("Administrator")) && (
+                  <Link href="/change-password">
+                  <div className="dropdown-row">
+                      <i className="ri-lock-password-line text-amber-500 text-lg"></i>
+                      <span>Change Password</span>
+                  </div>
+                  </Link>
+                )}
 
                 {( userRoles.includes("Admin") || userRoles.includes("Administrator")) && (
                   <Link href="/teams">
