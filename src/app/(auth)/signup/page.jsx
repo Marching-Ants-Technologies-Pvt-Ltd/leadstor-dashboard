@@ -49,7 +49,7 @@ export default function SignUp() {
         password_confirmation: z
             .string()
             .min(1, 'Password confirmation is required')
-            .min(8, 'Password must be at least 8 characters'),
+            .min(8, ''),
     }).refine((data) => data.password === data.password_confirmation, {
         path: ['password_confirmation'],
         message: 'Password do not match',
