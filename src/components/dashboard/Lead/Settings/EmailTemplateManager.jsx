@@ -1,10 +1,111 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { toast } from "react-toastify";
+import { useEffect, useRef, useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { xFetch } from "@/utility/xFetch";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
+
+const mdToHtml = (text = "") => {
+    // Escape HTML-special characters first, so nothing pasted can break markup
+    let html = text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+    const lines = html.split(/\r?\n/);
+    const out = [];
+    let inList = false;
+    let tableBuffer = [];
+
+    const flushList = () => {
+        if (inList) {
+            out.push("</ul>");
+            inList = false;
+        }
+    };
+
+    const isTableRow = (line) => /^\s*\|.*\|\s*$/.test(line);
+    const isTableSeparator = (line) => /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)+\|?\s*$/.test(line);
+
+    const flushTable = () => {
+        if (tableBuffer.length === 0) return;
+        const rows = tableBuffer.filter((l) => !isTableSeparator(l));
+        const cellsOf = (line) =>
+            line.replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
+
+        if (rows.length > 0) {
+            out.push("<table border='1' cellpadding='6' style='border-collapse:collapse;'>");
+            const headerCells = cellsOf(rows[0]);
+            out.push("<tr>" + headerCells.map((c) => `<th>${c}</th>`).join("") + "</tr>");
+            for (let i = 1; i < rows.length; i++) {
+                const cells = cellsOf(rows[i]);
+                out.push("<tr>" + cells.map((c) => `<td>${c}</td>`).join("") + "</tr>");
+            }
+            out.push("</table>");
+        }
+        tableBuffer = [];
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        // Table detection: current line + next line look like a table header + separator
+        if (isTableRow(line) && (isTableSeparator(lines[i + 1] || "") || tableBuffer.length > 0)) {
+            flushList();
+            tableBuffer.push(line);
+            continue;
+        } else if (tableBuffer.length > 0) {
+            flushTable();
+        }
+
+        // Heading detection: "# text", "## text", "### text" (up to 6 levels, standard Markdown)
+        const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
+        if (headingMatch) {
+            flushList();
+            const level = headingMatch[1].length;
+            out.push(`<h${level}>${headingMatch[2]}</h${level}>`);
+            continue;
+        }
+
+        // Bullet detection: "* text" or "- text"
+        const bulletMatch = line.match(/^\s*[-*]\s+(.*)$/);
+        if (bulletMatch) {
+            if (!inList) {
+                out.push("<ul>");
+                inList = true;
+            }
+            out.push(`<li>${bulletMatch[1]}</li>`);
+            continue;
+        } else {
+            flushList();
+        }
+
+        out.push(line);
+    }
+    flushList();
+    flushTable();
+
+    html = out.join("\n");
+
+    // Bold: **text**  (must run before italic, or ** gets mangled by the * rule)
+    html = html.replace(/\*\*\s*([^*]+?)\s*\*\*/g, "<strong>$1</strong>");
+
+    // Strikethrough: ~~text~~
+    html = html.replace(/~~([^~]+?)~~/g, "<del>$1</del>");
+
+    // Italic: *text* (single asterisk, safe now since ** is already consumed)
+    html = html.replace(/\*([^*\n]+?)\*/g, "<em>$1</em>");
+
+    // Convert remaining plain newlines to <br>, but not the ones already inside <ul>/<table> blocks
+    html = html
+        .split("\n")
+        .map((line) => (/^<(ul|\/ul|li|table|tr|\/table|h[1-6])/.test(line.trim()) ? line : line + "<br>"))
+        .join("\n");
+
+    return html;
+};
 
 const getJoditConfig = (heightPx, joditInstanceRef) => ({
     height: heightPx,
@@ -44,56 +145,80 @@ const getJoditConfig = (heightPx, joditInstanceRef) => ({
     //     },
     // },
     
-    events: {
+        events: {
         afterInit: (instance) => {
             joditInstanceRef.current = instance;
-        },
-        paste: function (event) {
-            let imageFile = null;
 
-            if (event.clipboardData?.files?.length > 0 && event.clipboardData.files[0].type.startsWith("image/")) {
-                imageFile = event.clipboardData.files[0];
-            } else {
-                const items = event.clipboardData?.items;
-                if (items) {
-                    for (let i = 0; i < items.length; i++) {
-                        if (items[i].type.startsWith("image/")) {
-                            imageFile = items[i].getAsFile();
-                            break;
-                        }
-                    }
-                }
-            }
+            const editorNode = instance.editor;
+            if (editorNode && !editorNode.dataset.mdPasteBound) {
+                editorNode.dataset.mdPasteBound = "true";
 
-            if (imageFile) {
-                event.preventDefault();
-                event.stopPropagation();
+                editorNode.addEventListener(
+                    "paste",
+                    function (event) {
+                        let imageFile = null;
 
-                const formData = new FormData();
-                formData.append("uploadTemplateImage", imageFile);
-
-                const token = localStorage.getItem("access_token");
-
-                fetch(`${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/profile/uploadTemplateImage`, {
-                    method: "POST",
-                    headers: { Authorization: `Bearer ${token}` },
-                    body: formData,
-                })
-                    .then((res) => res.json())
-                    .then((resp) => {
-                        const instance = joditInstanceRef.current;
-                        if (resp?.success && resp?.url && instance?.selection) {
-                            instance.selection.insertImage(resp.url, null, 250);
+                        if (event.clipboardData?.files?.length > 0 && event.clipboardData.files[0].type.startsWith("image/")) {
+                            imageFile = event.clipboardData.files[0];
                         } else {
-                            toast.error(resp?.msg || "Image upload failed");
+                            const items = event.clipboardData?.items;
+                            if (items) {
+                                for (let i = 0; i < items.length; i++) {
+                                    if (items[i].type.startsWith("image/")) {
+                                        imageFile = items[i].getAsFile();
+                                        break;
+                                    }
+                                }
+                            }
                         }
-                    })
-                    .catch((err) => {
-                        console.error("Paste image upload error:", err);
-                        toast.error("Image upload failed. Please try again.");
-                    });
 
-                return false;
+                        if (imageFile) {
+                            event.preventDefault();
+                            event.stopImmediatePropagation();
+
+                            const formData = new FormData();
+                            formData.append("uploadTemplateImage", imageFile);
+
+                            const token = localStorage.getItem("access_token");
+
+                            fetch(`${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/profile/uploadTemplateImage`, {
+                                method: "POST",
+                                headers: { Authorization: `Bearer ${token}` },
+                                body: formData,
+                            })
+                                .then((res) => res.json())
+                                .then((resp) => {
+                                    const inst = joditInstanceRef.current;
+                                    if (resp?.success && resp?.url && inst?.selection) {
+                                        inst.selection.insertImage(resp.url, null, 250);
+                                    } else {
+                                        toast.error(resp?.msg || "Image upload failed");
+                                    }
+                                })
+                                .catch((err) => {
+                                    console.error("Paste image upload error:", err);
+                                    toast.error("Image upload failed. Please try again.");
+                                });
+
+                            return;
+                        }
+
+                        const looksLikeMarkdown = (text) =>
+                            /\*\*[^*]+\*\*/.test(text) ||
+                            /^\s*[-*]\s+/m.test(text) ||
+                            /~~[^~]+~~/.test(text) ||
+                            /^\s*\|.*\|\s*$/m.test(text) ||
+                            /^#{1,6}\s+/m.test(text);
+
+                        const pastedText = event.clipboardData?.getData("text/plain") || "";
+                        if (looksLikeMarkdown(pastedText)) {
+                            event.preventDefault();
+                            event.stopImmediatePropagation();
+                            instance.selection?.insertHTML(mdToHtml(pastedText));
+                        }
+                    },
+                    true // capture phase — runs before Jodit's own internal paste handling
+                );
             }
         },
     },
@@ -105,6 +230,8 @@ export default function EmailTemplateManager() {
 
     const joditInstanceRef = useRef(null); 
 
+    const joditConfig320 = useMemo(() => getJoditConfig(320, joditInstanceRef), []);
+    const joditConfig300 = useMemo(() => getJoditConfig(300, joditInstanceRef), []);
 
     const [loading, setLoading] = useState(true);
     const [templates, setTemplates] = useState([]);
@@ -210,6 +337,8 @@ export default function EmailTemplateManager() {
         }
     };
 
+    const isFailed = (res) => !res || res.msg === false;
+
     // Save new template
     const saveTemplate = async () => {
         try {
@@ -225,13 +354,19 @@ export default function EmailTemplateManager() {
             atextEditor: toBase64Utf8(latestContent),
         };
 
-        await xFetch({
+        const res = await xFetch({
             path: "/services/profile/addTemplates",
             method: "POST",
             payload,
         });
 
+        if (isFailed(res)) {
+            toast.error("Failed to create template. Please check the content and try again.");
+            return;
+        }
+
         toast.success("Template created!");
+    
         handleClose();
         fetchTemplates();
         } catch (e) {
@@ -258,11 +393,16 @@ export default function EmailTemplateManager() {
             tcontent: toBase64Utf8(latestContent),
         };
 
-        await xFetch({
+        const res = await xFetch({
             path: "/services/profile/updateTemplates",
             method: "POST",
             payload,
         });
+
+        if (isFailed(res)) {
+            toast.error("Failed to update template. Please check the content and try again.");
+            return;
+        }
 
         toast.success("Template updated!");
         fetchTemplates();
@@ -278,24 +418,30 @@ export default function EmailTemplateManager() {
         if (!selectedId) return toast.info("Select a template");
 
         try {
-        await xFetch({
+            const res = await xFetch({
             path: "/services/profile/deleteTemplates",
             method: "POST",
             payload: { tid: selectedId },
-        });
+            });
 
-        toast.success("Template deleted!");
-        resetForm();
-        fetchTemplates();
-        } catch {
-        toast.error("Delete failed");
-        }
+            if (isFailed(res)) {
+                toast.error("Delete failed");
+                return;
+            }
+
+            toast.success("Template deleted!");
+            resetForm();
+            fetchTemplates();
+            } catch {
+            toast.error("Delete failed");
+            }
     };
 
     // ── Render ─────────────────────────────────────────────────
     if (loading) {
         return (
         <div className="flex items-center justify-center min-h-[60vh]">
+            <ToastContainer position="top-right" autoClose={3000} />
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
         </div>
         );
@@ -303,6 +449,7 @@ export default function EmailTemplateManager() {
 
     return (
         <div className="p-6 max-w-7xl mx-auto">
+            <ToastContainer position="top-right" autoClose={3000} />
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <h2 className="text-2xl font-bold text-gray-800">
@@ -378,7 +525,7 @@ export default function EmailTemplateManager() {
                 <JoditEditor
                     ref={editorRef}
                     value={content}
-                    config={getJoditConfig(320, joditInstanceRef)}
+                    config={joditConfig320}
                     onBlur={(newContent) => {
                         contentRef.current = newContent || "";
                         setContent(newContent || "");
@@ -461,7 +608,7 @@ export default function EmailTemplateManager() {
                     <JoditEditor
                         ref={editorRef}
                         value={content}
-                        config={getJoditConfig(300, joditInstanceRef)}
+                        config={joditConfig300}
                         onBlur={(newContent) => {
                             contentRef.current = newContent || "";
                             setContent(newContent || "");

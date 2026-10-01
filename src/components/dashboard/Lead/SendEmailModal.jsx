@@ -93,6 +93,8 @@ export default function SendEmailModal({ isOpen, onClose, ids, emails = [] }) {
     border: '1.5px solid #bbb',
   };
 
+  const toBase64Utf8 = (value = '') => btoa(unescape(encodeURIComponent(value)));
+
   if (!isOpen) return null;
 
   // Compute if any candidates are selected
@@ -119,7 +121,8 @@ export default function SendEmailModal({ isOpen, onClose, ids, emails = [] }) {
       formData.append('ids', Array.isArray(ids) ? ids.join(',') : ids);
       formData.append('type', 'Email');
       formData.append('ccEmail', cc);
-      formData.append('content', message);
+      formData.append('content', toBase64Utf8(message));
+      formData.append('contentEncoding', 'base64');
       formData.append('subject', subject);
       formData.append('corporateId', Corporate?._id || '');
       formData.append('userId', User?._id || '');

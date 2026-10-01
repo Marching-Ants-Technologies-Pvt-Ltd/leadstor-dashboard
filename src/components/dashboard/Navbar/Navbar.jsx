@@ -134,7 +134,7 @@ export default function Navbar({ collapsed, setCollapsed, data }) {
                 </div>
                 </Link>
 
-                {( userRoles.includes("Admin") || userRoles.includes("Administrator")) && (
+                {userRoles.includes("Admin") && (
                   <Link href="/change-password">
                   <div className="dropdown-row">
                       <i className="ri-lock-password-line text-amber-500 text-lg"></i>
