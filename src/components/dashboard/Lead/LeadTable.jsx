@@ -165,7 +165,6 @@ export default function LeadsTable({
     useEffect(() => {
         const fetchSubordinates = async () => {
             if ( User._id == -1 || userRoles.includes("Read Only Super User")) {
-                console.log('aa');
                 setSubOrdinates(userRoles.includes("Read Only Super User") ? ['-1'] : [String(User._id)]);
                 setIsSubordinatesLoaded(true);
                 return;
