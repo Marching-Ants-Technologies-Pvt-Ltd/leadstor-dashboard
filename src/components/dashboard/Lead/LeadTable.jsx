@@ -164,7 +164,8 @@ export default function LeadsTable({
 
     useEffect(() => {
         const fetchSubordinates = async () => {
-            if (!userRoles.includes("") || User._id == -1 || userRoles.includes("Read Only Super User")) {
+            if ( User._id == -1 || userRoles.includes("Read Only Super User")) {
+                console.log('aa');
                 setSubOrdinates(userRoles.includes("Read Only Super User") ? ['-1'] : [String(User._id)]);
                 setIsSubordinatesLoaded(true);
                 return;
@@ -178,7 +179,7 @@ export default function LeadsTable({
 
                 if (Array.isArray(data)) {
                     subs = data;
-                } 
+                }
                 else if (data && typeof data === 'object' && Array.isArray(data.subordinates || data.data)) {
                     subs = data.subordinates || data.data || [];
                 } 
@@ -191,7 +192,7 @@ export default function LeadsTable({
                         subs = [];
                     }
                 }
-
+                
                 const formattedSubs = Array.isArray(subs) 
                     ? subs.map(id => String(id).trim()).filter(id => id !== '')
                     : [];
