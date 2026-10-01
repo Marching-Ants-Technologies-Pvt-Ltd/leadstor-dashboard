@@ -7,6 +7,8 @@ import { RiArrowDownSLine, RiArrowRightSLine } from "react-icons/ri";
 
 const AdmissionStatuses = dynamic(() => import('@/components/dashboard/Payments/Settings/AdmissionStatuses'), { ssr: false });
 const Preferences = dynamic(() => import('@/components/dashboard/Payments/Settings/Preferences'), { ssr: false });
+const CertificateTemplate = dynamic(() => import('@/components/dashboard/Payments/Settings/CertificateTemplate'), { ssr: false });
+const ReceiptTemplate = dynamic(() => import('@/components/dashboard/Payments/Settings/ReceiptTemplate'), { ssr: false });
 
 export default function PaymentsSettings() {
   const router = useRouter();
@@ -20,6 +22,8 @@ export default function PaymentsSettings() {
       children: [
         { key: "admissionStatuses", label: "Admission Statuses" },
         { key: "preferences", label: "Preferences" },
+        { key: "certificateTemplate", label: "Certificate Template" },
+        { key: "receiptTemplate", label: "Receipt Template" },
       ]
     }
   ];
@@ -30,6 +34,10 @@ export default function PaymentsSettings() {
         return <AdmissionStatuses />;
       case "preferences":
         return <Preferences />;
+      case "certificateTemplate":
+        return <CertificateTemplate />;
+      case "receiptTemplate":
+        return <ReceiptTemplate />;
       default:
         return <div className="text-gray-500">Select an item from the menu</div>;
     }
