@@ -22,6 +22,8 @@ export default function Navbar({ collapsed, setCollapsed, data }) {
   const pageTitles = {
     '/leads': 'Lead Management',
     '/leads/settings': 'Lead Settings',
+    '/leads/forms/builder': 'Form Builder',
+    '/leads/forms/preview': 'Form Preview',
     '/payments': 'Payment Management',
     '/placements': 'Placements',
     '/jobs': 'Job Postings',
