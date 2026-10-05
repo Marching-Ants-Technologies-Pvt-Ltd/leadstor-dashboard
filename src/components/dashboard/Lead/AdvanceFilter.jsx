@@ -706,11 +706,14 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
         title: 'Owner',
         value: ownerIds,
         displayValue: selectedFilters.owner
-          .map(id => {
-            const opt = filterOptions.owner?.find(o => o.key === id);
-            return opt?.value || id;
-          })
-          .join(', '),
+        .map(id => {
+          const opt = filterOptions.owner?.find(
+            o => String(o.key) === String(id)
+          );
+
+          return opt?.label || opt?.value || id;
+        })
+        .join(', '),
         query: 'owner'
       });
     }
@@ -807,9 +810,8 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
     );
   };
 
-  const handleApplyFilters = async () => {
+  const applyFiltersToView = () => {
     if (!hasAnyFilter()) return;
-    setApplying(true);
 
     const filters = buildLeadFilters();
     LeadFilters.setValue(filters);
@@ -822,7 +824,12 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
     if (window.tableRefresh) {
       window.tableRefresh();
     }
+  };
 
+  const handleApplyFilters = async () => {
+    if (!hasAnyFilter()) return;
+    setApplying(true);
+    applyFiltersToView();
     setApplying(false);
     onClose();
   };
