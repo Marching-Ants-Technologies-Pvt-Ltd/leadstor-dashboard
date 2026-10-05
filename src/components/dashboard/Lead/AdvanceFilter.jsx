@@ -253,39 +253,6 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
     });
   };
 
-  // const transformOwnerOptions = (owners) => {console.log(owners);
-  //       if (!owners || Object.keys(owners).length === 0) return [];
-
-  //       let list = Object.entries(owners).map(([key, value]) => ({
-  //           key: String(key),
-  //           value: String(value),
-  //           label: String(value) 
-  //       }));
-
-  //       // For Counsellor → filter by subordinates
-  //       if (isPureCounsellor && isSubordinatesLoaded) {
-  //           list = list.filter(owner => subOrdinates.includes(owner.key));
-  //       }
-  //       const map = new Map();
-
-  //       if (userRoles.includes("Super Counsellor") && User?.isManager === 1) {
-  //           // map.set(String(User.originalId), { key: User.originalId, value: User.name });
-  //            map.set(String(User.originalId), { 
-  //               key: String(User.originalId),
-  //               value: String(User.originalId),
-  //               label: User.name   // 👈 important
-  //           });
-  //       }
-
-  //       if (!userRoles.includes("Counsellor")) {
-  //           map.set("0", { key: "0", value: "--Not Allocated--" });
-  //       }
-
-  //       const finalOptions = Array.from(map.values());console.log(finalOptions);
-
-  //       return [...finalOptions, ...list];
-  // };
-
   const transformOwnerOptions = (owners) => {
     if (!owners || Object.keys(owners).length === 0) return [];
 
