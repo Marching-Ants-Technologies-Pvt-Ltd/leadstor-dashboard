@@ -31,6 +31,39 @@ import ExtendedFormModal from '@/components/dashboard/Lead/ExtendedFormModal';
 import UniversityListModal from '@/components/dashboard/Lead/UniversityListModal';
 import DocumentsModal from '@/components/dashboard/Lead/DocumentsModal';
 
+const parseUpdateTime = (value) => {
+    if (!value || typeof value !== 'string') return 0;
+
+    const [datePart = '', timePart = '00:00'] = value.trim().split(/\s+/);
+    const [dayStr = '0', monthStr = 'Jan', yearStr = '1970'] = datePart.split('-');
+    const [hourStr = '0', minuteStr = '0'] = timePart.split(':');
+
+    const monthMap = {
+        Jan: 0,
+        Feb: 1,
+        Mar: 2,
+        Apr: 3,
+        May: 4,
+        Jun: 5,
+        Jul: 6,
+        Aug: 7,
+        Sep: 8,
+        Oct: 9,
+        Nov: 10,
+        Dec: 11
+    };
+
+    const parsed = new Date(
+        Number(yearStr),
+        monthMap[monthStr.slice(0, 3)] ?? 0,
+        Number(dayStr),
+        Number(hourStr),
+        Number(minuteStr)
+    );
+
+    return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+};
+
 export default function LeadsTable({
     columns,
     setColumns,
@@ -86,6 +119,8 @@ export default function LeadsTable({
     const [showGoogleConnectDialog, setShowGoogleConnectDialog] = useState(false);
     const [subOrdinates, setSubOrdinates] = useState([User._id]);
     const [isSubordinatesLoaded, setIsSubordinatesLoaded] = useState(false);
+    const [updateTimeSortDirection, setUpdateTimeSortDirection] = useState(null);
+    const [isUpdateTimeSorting, setIsUpdateTimeSorting] = useState(false);
     const userRoles = Array.isArray(User.role) 
     ? User.role.map(r => String(r).trim())
     : [String(User.role).trim()];
@@ -104,6 +139,19 @@ export default function LeadsTable({
             return owners?.[id] || '-';
         }
     };
+
+    const sortedLeads = useMemo(() => {
+        if (!updateTimeSortDirection) return leads;
+
+        return [...leads].sort((a, b) => {
+            const aTime = parseUpdateTime(a?.updateTime);
+            const bTime = parseUpdateTime(b?.updateTime);
+
+            return updateTimeSortDirection === 'asc'
+                ? aTime - bTime
+                : bTime - aTime;
+        });
+    }, [leads, updateTimeSortDirection]);
 
     useEffect(() => {
         if (selectAllRef.current) {
@@ -210,10 +258,15 @@ export default function LeadsTable({
         fetchSubordinates();
     }, []);
 
-    async function xLeads(callback) {
+    async function xLeads(callback, sortOverride = null) {
         // Clear selected leads when table refreshes (use ref to avoid stale closure)
         if (selectedLeadIdsRef.current.length > 0) {
             setSelectedLeadIdsRef.current([]);
+        }
+
+        const isSortRequest = Boolean(sortOverride?.sortField || sortOverride?.sortDirection);
+        if (isSortRequest) {
+            setIsUpdateTimeSorting(true);
         }
 
         let limit = LeadsPerPage.value();
@@ -241,6 +294,14 @@ export default function LeadsTable({
             limit,
             search: LeadSearch.value()
         };
+
+        const activeSortDirection = sortOverride?.sortDirection || updateTimeSortDirection;
+        const activeSortField = sortOverride?.sortField || (activeSortDirection ? 'updateTime' : null);
+
+        if (activeSortField && activeSortDirection) {
+            payload.sortField = activeSortField;
+            payload.sortDirection = activeSortDirection;
+        }
 
         // Add branchId (corporateId) to payload if provided
         if (branchId) {
@@ -290,6 +351,7 @@ export default function LeadsTable({
                 
                 // Then call callback to stop any other spinners (e.g., LeadMenu search spinner)
                 if (callback) callback();
+                if (isSortRequest) setIsUpdateTimeSorting(false);
             })
             .catch(err => {
                 console.error('Error loading leads:', err);
@@ -297,6 +359,7 @@ export default function LeadsTable({
                 if (typeof window.onTableRefresh === 'function') window.onTableRefresh();
                 // Then call callback to stop other spinners
                 if (callback) callback();
+                if (isSortRequest) setIsUpdateTimeSorting(false);
             });
     }
 
@@ -1343,8 +1406,42 @@ export default function LeadsTable({
         cols.push({
             accessorKey: col,
             size: col === 'remarks' ? 200 : undefined,
-            header: (col === 'course' && Corporate?.type === 800) ? 'Country' : (columns?.find(c => c.dataField === col)?.displayName
-                    || columns?.find(c => c.dataField === col)?.fieldName),
+            header: col === 'updateTime' ? (
+                <button
+                    type="button"
+                    onClick={() => {
+                        const nextDirection = updateTimeSortDirection === 'asc' ? 'desc' : 'asc';
+                        setUpdateTimeSortDirection(nextDirection);
+                        xLeads(undefined, { sortField: 'updateTime', sortDirection: nextDirection });
+                    }}
+                    className="flex w-full items-center justify-between gap-2 rounded px-1 py-0.5 font-semibold text-left cursor-pointer select-none hover:bg-slate-100"
+                    title="Toggle update time sort"
+                    aria-label="Sort by update time"
+                >
+                    <span>
+                        {columns?.find(c => c.dataField === col)?.displayName
+                            || columns?.find(c => c.dataField === col)?.fieldName
+                            || 'Update Time'}
+                    </span>
+                    <span className="flex flex-col items-center justify-center text-[10px] leading-none">
+                        <i
+                            className={`transition ${
+                                updateTimeSortDirection === 'asc'
+                                    ? 'ri-arrow-up-s-fill text-emerald-600'
+                                    : 'ri-arrow-up-s-line text-slate-400'
+                            }`}
+                        />
+                        <i
+                            className={`-mt-1 transition ${
+                                updateTimeSortDirection === 'desc'
+                                    ? 'ri-arrow-down-s-fill text-emerald-600'
+                                    : 'ri-arrow-down-s-line text-slate-400'
+                            }`}
+                        />
+                    </span>
+                </button>
+            ) : ((col === 'course' && Corporate?.type === 800) ? 'Country' : (columns?.find(c => c.dataField === col)?.displayName
+                    || columns?.find(c => c.dataField === col)?.fieldName)),
 
             cell: ({ row }) => {
                 const r = row.original;
@@ -1366,10 +1463,10 @@ export default function LeadsTable({
         });
 
         return cols;
-    }, [columns, columnOrder, leads, selectedLeadIds]);
+    }, [columns, columnOrder, leads, selectedLeadIds, updateTimeSortDirection]);
 
     const table = useReactTable({
-        data: leads,
+        data: sortedLeads,
         columns: tableColumns,
         getCoreRowModel: getCoreRowModel(),
         getRowCanExpand: () => true,
@@ -1383,6 +1480,13 @@ export default function LeadsTable({
     return (
         <>
         <AppliedFilters onOpenAdvanceFilter={onOpenAdvanceFilter} />
+
+        {isUpdateTimeSorting && (
+            <div className="mb-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700 flex items-center gap-2">
+                <i className="ri-loader-4-line animate-spin" />
+                Sorting by update time...
+            </div>
+        )}
 
         <div className="bg-white rounded-xl border flex-1 overflow-x-auto overflow-y-auto">
             <table className="w-full border-collapse text-sm leadstor-table-modern">
