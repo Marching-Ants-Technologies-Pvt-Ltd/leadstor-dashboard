@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ToastContainer, toast, Bounce } from 'react-toastify';
 import { xFetch, jsonToQueryParams, xDownload, xDownloadBlob} from '@/utility/xFetch';
-import { Corporate,User } from '@/utility/TinyDB';
+import { Corporate,User, PaymentSavedView } from '@/utility/TinyDB';
 import { Users, ArrowLeft } from 'lucide-react';
 import PaymentsTable from './table';
 import ReportDropdown from './reportMenu';
@@ -40,6 +40,19 @@ export default function PaymentsSectionController() {
     ? User.role.map(r => String(r).trim())
     : [String(User.role).trim()];
 
+    const normalizePaymentAppliedFilters = (savedFilters) => {
+        const fromDate = savedFilters?.range?.from ? new Date(savedFilters.range.from) : null;
+        const toDate = savedFilters?.range?.to ? new Date(savedFilters.range.to) : null;
+
+        return {
+            selected: savedFilters?.selected || {},
+            range: {
+                from: fromDate && !Number.isNaN(fromDate.getTime()) ? fromDate : null,
+                to: toDate && !Number.isNaN(toDate.getTime()) ? toDate : null
+            }
+        };
+    };
+
     // Fetch test info for branch if coming from branch
     useEffect(() => {
         if (branchCorporateId && !branchTestId) {
@@ -64,20 +77,30 @@ export default function PaymentsSectionController() {
         }
     }, [branchCorporateId, branchTestId, branchTestType]);
 
-    const [query, setQuery] = useState({
-        corporateId: branchCorporateId || Corporate._id,
-        search: '',
-        order: 'asc',
-        offset: 0,
-        limit: 50
+    const [query, setQuery] = useState(() => {
+        const savedView = typeof window !== 'undefined' ? PaymentSavedView.value() : null;
+        const savedQuery = savedView?.query || {};
+
+        return {
+            corporateId: branchCorporateId || Corporate._id,
+            search: '',
+            order: 'asc',
+            offset: 0,
+            limit: 50,
+            ...savedQuery,
+            offset: 0,
+            corporateId: branchCorporateId || Corporate._id
+        };
     });
 
-    const [appliedFilters, setAppliedFilters] = useState({
-        selected: {},
-        range: {
-            from: null,
-            to: null
-        }
+    const [appliedFilters, setAppliedFilters] = useState(() => {
+        const savedView = typeof window !== 'undefined' ? PaymentSavedView.value() : null;
+        return normalizePaymentAppliedFilters(savedView?.appliedFilters);
+    });
+
+    const [hasSavedView, setHasSavedView] = useState(() => {
+        const savedView = typeof window !== 'undefined' ? PaymentSavedView.value() : null;
+        return Boolean(savedView);
     });
 
     // Helper Functions
@@ -103,6 +126,60 @@ export default function PaymentsSectionController() {
     };
 
     const totalRecords = leads?.total || 0;
+
+    const paymentHasActiveFilters = () => {
+        return Boolean(
+            query.search ||
+            query.pending ||
+            query.dueToday ||
+            query.label ||
+            query.source ||
+            query.counsellor ||
+            query.trainer ||
+            query.batchid ||
+            query.subServiceId ||
+            query.leadCategoryType ||
+            query.associatedCenters ||
+            query.status ||
+            query.doj ||
+            query.dojend ||
+            Object.keys(appliedFilters?.selected ?? {}).length > 0 ||
+            appliedFilters?.range?.from ||
+            appliedFilters?.range?.to
+        );
+    };
+
+    const persistPaymentView = () => {
+        const savedView = {
+            query: {
+                ...query,
+                offset: 0,
+                corporateId: branchCorporateId || Corporate._id
+            },
+            appliedFilters
+        };
+
+        PaymentSavedView.setValue(savedView);
+        setHasSavedView(true);
+    };
+
+    const handleSavePaymentView = () => {
+        persistPaymentView();
+    };
+
+    const handleClearSavedPaymentView = () => {
+        PaymentSavedView.reset();
+        setHasSavedView(false);
+        setAppliedFilters(normalizePaymentAppliedFilters());
+        setQuery({
+            corporateId: branchCorporateId || Corporate._id,
+            search: '',
+            order: 'asc',
+            offset: 0,
+            limit: 50
+        });
+    };
+
     const totalPages = Math.ceil(totalRecords / query.limit);
     const currentPage = Math.floor(query.offset / query.limit) + 1;
     const getPages = () => {
@@ -618,6 +695,23 @@ export default function PaymentsSectionController() {
                         }
 
                     </button>
+
+                    {paymentHasActiveFilters() && (
+                        <button
+                            onClick={handleSavePaymentView}
+                            className="px-3 py-1.5 text-xs border border-emerald-300 rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all"
+                        >
+                            Save View
+                        </button>
+                    )}
+                    {hasSavedView && (
+                        <button
+                            onClick={handleClearSavedPaymentView}
+                            className="px-3 py-1.5 text-xs border border-rose-300 rounded-full bg-rose-50 text-rose-700 hover:bg-rose-100 transition-all"
+                        >
+                            Clear Saved View
+                        </button>
+                    )}
 
                     {/* Backdrop: Report Download */}
                     {downloadReport && <div onClick={() => setDownloadReport(false)} className="absolute inset-0 bg-transparent z-10" />}

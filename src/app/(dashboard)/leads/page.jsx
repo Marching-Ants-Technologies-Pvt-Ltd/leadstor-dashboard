@@ -9,7 +9,6 @@ import LeadsTable from '@/components/dashboard/Lead/LeadTable';
 import LeadsMenu from '@/components/dashboard/Lead/LeadMenu';
 import LeadsTablePagination from '@/components/dashboard/Lead/Pagination';
 import FilterDrawer from '@/components/dashboard/Lead/AdvanceFilter';
-import AppliedFilters from '@/components/dashboard/Lead/AppliedFilters';
 import { xFetch } from '@/utility/xFetch';
 import AddLead from '@/components/dashboard/Lead/AddLead';
 import { Corporate, Test as SessionTest, User } from '@/utility/TinyDB';
@@ -245,9 +244,6 @@ export default function Leads() {
                         statusCounts={statusCounts}
                         setStatusCounts={setStatusCounts}
                     />
-                    
-                    {/* APPLIED FILTERS BAR */}
-                    <AppliedFilters onOpenAdvanceFilter={() => setDrawerOpen(true)} />
                     
                     {/* NORMAL LEADS TABLE */}
                     <div className="flex-1 flex flex-col px-4 gap-3 overflow-hidden">

@@ -87,6 +87,18 @@ export const LeadFilters = {
     reset: () => localStorage.setItem('LeadFilters', '[]'),
 }
 
+export const LeadSavedView = {
+    value: () => JSON.parse(localStorage.getItem('LeadSavedView') ?? 'null'),
+    setValue: (value) => localStorage.setItem('LeadSavedView', JSON.stringify(value)),
+    reset: () => localStorage.removeItem('LeadSavedView'),
+}
+
+export const PaymentSavedView = {
+    value: () => JSON.parse(localStorage.getItem('PaymentSavedView') ?? 'null'),
+    setValue: (value) => localStorage.setItem('PaymentSavedView', JSON.stringify(value)),
+    reset: () => localStorage.removeItem('PaymentSavedView'),
+}
+
 export const LeadSearch = {
   value: () => localStorage.getItem('LeadSearch') ?? '',
   setValue: (value) => localStorage.setItem('LeadSearch', value),

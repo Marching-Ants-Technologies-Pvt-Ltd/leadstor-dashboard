@@ -13,6 +13,7 @@ import {
     TotalLeads,
     LeadsCurrentPage,
     LeadFilters,
+    LeadSavedView,
     LeadSearch 
 } from '@/utility/TinyDB';
 import UpdateLead from '@/components/dashboard/Lead/UpdateLead';
@@ -126,6 +127,29 @@ export default function LeadsTable({
     : [String(User.role).trim()];
     const ADMIN_ROLES = ['administrator', 'admin'];
     const isAdmin = userRoles.some(r => ADMIN_ROLES.includes(r.toLowerCase().trim()));
+
+    const syncSavedLeadView = () => {
+        const savedView = LeadSavedView.value();
+
+        if (Array.isArray(savedView) && savedView.length > 0) {
+            LeadFilters.setValue(savedView);
+            LeadSearch.reset();
+            showAppliedFilter(savedView);
+            return savedView;
+        }
+
+        if (LeadFilters.value().length > 0) {
+            LeadFilters.reset();
+        }
+
+        LeadSearch.reset();
+
+        if (typeof window !== 'undefined') {
+            window.__setAppliedFilters?.(null);
+        }
+
+        return [];
+    };
     const isReadOnlySuperUser = userRoles.includes("Read Only Super User");
 
     const dataFormatters = {
@@ -1301,6 +1325,7 @@ export default function LeadsTable({
 
         if (!isSubordinatesLoaded) return; 
 
+        syncSavedLeadView();
         LeadsCurrentPage.setValue(1);
         xLeads();
         window.tableRefresh = () => xLeads();

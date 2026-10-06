@@ -253,38 +253,58 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
     });
   };
 
-  const transformOwnerOptions = (owners) => {console.log(owners);
-        if (!owners || Object.keys(owners).length === 0) return [];
+  const transformOwnerOptions = (owners) => {
+    if (!owners || Object.keys(owners).length === 0) return [];
 
-        let list = Object.entries(owners).map(([key, value]) => ({
-            key: String(key),
-            value: String(value),
-            label: String(value) 
-        }));
+    let list = Object.entries(owners).map(([key, value]) => ({
+        key: String(key),
+        value: String(value),
+        label: String(value)
+    }));
 
-        // For Counsellor → filter by subordinates
-        if (isPureCounsellor && isSubordinatesLoaded) {
-            list = list.filter(owner => subOrdinates.includes(owner.key));
+    // Counsellor -> only show own/subordinate owners
+    if (isPureCounsellor && isSubordinatesLoaded) {
+        list = list.filter(owner =>
+            subOrdinates.includes(owner.key)
+        );
+    }
+
+    const map = new Map();
+
+    /**
+     * Manager:
+     * Always show the logged-in manager first,
+     * followed by his/her subordinates.
+     */
+    if (User?.isManager === 1) {
+        const managerId = String(User.originalId ?? User._id);
+
+        map.set(managerId, {
+            key: managerId,
+            value: managerId,
+            label: User.name
+        });
+    }
+
+    // Add Not Allocated for non-counsellors
+    if (!userRoles.includes("Counsellor")) {
+        map.set("0", {
+            key: "0",
+            value: "0",
+            label: "--Not Allocated--"
+        });
+    }
+
+    // Add owners/subordinates returned from API
+    list.forEach(owner => {
+        // Don't duplicate manager if API already returns manager
+        if (!map.has(owner.key)) {
+            map.set(owner.key, owner);
         }
-        const map = new Map();
+    });
 
-        if (userRoles.includes("Super Counsellor") && User?.isManager === 1) {
-            // map.set(String(User.originalId), { key: User.originalId, value: User.name });
-             map.set(String(User.originalId), { 
-                key: String(User.originalId),
-                value: String(User.originalId),
-                label: User.name   // 👈 important
-            });
-        }
-
-        if (!userRoles.includes("Counsellor")) {
-            map.set("0", { key: "0", value: "--Not Allocated--" });
-        }
-
-        const finalOptions = Array.from(map.values());
-
-        return [...finalOptions, ...list];
-  };
+    return Array.from(map.values());
+};
 
   // Re-apply owner transformation when subordinates are loaded
   useEffect(() => {
@@ -686,11 +706,14 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
         title: 'Owner',
         value: ownerIds,
         displayValue: selectedFilters.owner
-          .map(id => {
-            const opt = filterOptions.owner?.find(o => o.key === id);
-            return opt?.value || id;
-          })
-          .join(', '),
+        .map(id => {
+          const opt = filterOptions.owner?.find(
+            o => String(o.key) === String(id)
+          );
+
+          return opt?.label || opt?.value || id;
+        })
+        .join(', '),
         query: 'owner'
       });
     }
@@ -787,9 +810,8 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
     );
   };
 
-  const handleApplyFilters = async () => {
+  const applyFiltersToView = () => {
     if (!hasAnyFilter()) return;
-    setApplying(true);
 
     const filters = buildLeadFilters();
     LeadFilters.setValue(filters);
@@ -802,7 +824,12 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
     if (window.tableRefresh) {
       window.tableRefresh();
     }
+  };
 
+  const handleApplyFilters = async () => {
+    if (!hasAnyFilter()) return;
+    setApplying(true);
+    applyFiltersToView();
     setApplying(false);
     onClose();
   };
