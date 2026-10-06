@@ -54,6 +54,7 @@ export default function TableReorder() {
     xFetch({ path: "/services/profile/columns" })
       .then((data) => {
         setColumns(data);
+        console.log("COLUMNS DATA:", data); 
         const order = data.map((item) => item.fieldId).filter((id) => id);
         setColumnOrder(order);
       })

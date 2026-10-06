@@ -40,6 +40,7 @@ const AssociatedCenters = dynamic(() => import('@/components/dashboard/Lead/Sett
 const Qualification = dynamic(() => import('@/components/dashboard/Lead/Settings/Qualification'), { ssr: false });
 const XtremeConfig = dynamic(() => import('@/components/dashboard/Lead/Settings/XtremeConfig'), { ssr: false });
 const CourseAgentMapping = dynamic(() => import('@/components/dashboard/Lead/Settings/CourseAgentMapping'), { ssr: false });
+const MyForms = dynamic(() => import('@/components/dashboard/Lead/Settings/MyForms'), { ssr: false });
 // ---------------------------------------------------
 // ⚡ 2. SETTINGS PAGE
 // ---------------------------------------------------
@@ -158,6 +159,11 @@ export default function Settings() {
           { key: "images", label: "Images" },
           { key: "currencySettings", label: "Currency Settings" }
         ]
+      },
+      {
+        label: "My Forms",
+        key: "myForms",
+        standalone: true
       }
     ];
     }, [Corporate?.type, showXtremeMenu]);
@@ -289,6 +295,8 @@ export default function Settings() {
       case "IVR":
         return <IVRSettings />;
 
+      case "myForms":
+        return <MyForms />;
       default:
         return <div className="text-gray-500">Select an item from the menu</div>;
     }
@@ -319,7 +327,23 @@ export default function Settings() {
 
         <ul className="ml-3 mt-1 space-y-1 border-l pl-2 border-gray-300 text-sm">
 
-          {menuStructure.map(menu => (
+          {menuStructure.map(menu => {
+            if (menu.standalone) {
+              return (
+                <li
+                  key={menu.key}
+                  onClick={() => setActiveMenu(menu.key)}
+                  className={`cursor-pointer px-2 py-1 rounded ${
+                    activeMenu === menu.key
+                      ? "bg-blue-100 text-blue-600 font-medium"
+                      : "hover:bg-gray-200"
+                  }`}
+                >
+                  {menu.label}
+                </li>
+              );
+            }
+            return (
             <li key={menu.key}>
               <div
                 onClick={() => toggleMenu(menu.key)}
@@ -382,7 +406,8 @@ export default function Settings() {
                 </ul>
               )}
             </li>
-          ))}
+          );
+        })}
 
         </ul>
 
