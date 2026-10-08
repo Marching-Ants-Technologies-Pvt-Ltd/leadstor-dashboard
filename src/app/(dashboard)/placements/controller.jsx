@@ -5,15 +5,56 @@ import { ToastContainer, toast, Bounce } from 'react-toastify'
 import { xFetch } from '@/utility/xFetch'
 import { Corporate } from '@/utility/TinyDB'
 import * as XLSX from 'xlsx'
-import { Plus, Trash2, Filter, FileText, Search, RefreshCw, Download, BarChart3 } from 'lucide-react'
 import PlacementReadyTable from './table'
 import CandidateFormModal from '@/components/dashboard/placement/CandidateFormModal'
 import FilterModal from '@/components/dashboard/placement/FilterModal'
 import PlacementReportView from '@/components/dashboard/placement/PlacementReportView'
 import BatchRemarksModal from '@/components/dashboard/placement/BatchRemarksModal'
+import { Plus, Trash2, Filter, FileText, Search, RefreshCw, Download, BarChart3, Settings } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+
+const formatArrayOrString = (value) => {
+    if (Array.isArray(value)) return value.join(', ')
+    if (typeof value === 'string') return value
+    return ''
+}
+
+const EXPORT_COLUMNS = {
+    name: ['Name', (c) => c.name || ''],
+    email: ['Email', (c) => c.email || ''],
+    mobile: ['Mobile', (c) => c.mobile || ''],
+    qualification: ['Qualification', (c) => c.qualification || ''],
+    yearOfPassing: ['Year of Passing', (c) => c.yearOfPassing || ''],
+    currentCity: ['Current City', (c) => c.currentCity || ''],
+    jobTags: ['Job Profiles', (c) => formatArrayOrString(c.jobTags)],
+    batchNames: ['Batch', (c) => c.batchNames || ''],
+    placementStatus: ['Placement Status', (c) => c.placementStatus || ''],
+    resume: ['Resume', (c) => c.resumeName || ''],
+    course: ['Course', (c) => c.course || ''],
+    courseStartDate: ['Course Start', (c) => c.courseStartDate || ''],
+    courseEndDate: ['Course End', (c) => c.courseEndDate || ''],
+    jobStatus: ['Job Status', (c) => c.jobStatus || ''],
+    totalExperience: ['Total Exp (Years)', (c) => c.totalExperience || ''],
+    relevantExperience: ['Relevant Exp (Years)', (c) => c.relevantExperience || ''],
+    lastOrganizationName: ['Last Organization', (c) => c.lastOrganizationName || ''],
+    expectedJobType: ['Expected Job Type', (c) => c.expectedJobType || ''],
+    expectedLocationPreference: ['Expected Location', (c) => formatArrayOrString(c.expectedLocationPreference)],
+    lastDesignation: ['Last Designation', (c) => c.lastDesignation || ''],
+    expectedDesignation: ['Expected Designation', (c) => c.expectedDesignation || ''],
+    lastCTC: ['Last CTC', (c) => c.lastCTC || ''],
+    expectedCTC: ['Expected CTC', (c) => c.expectedCTC || ''],
+    remarks: ['Remarks', (c) => c.remarks || ''],
+    receiveJobOpportunities: ['Receive Job Opportunities', (c) => c.receiveJobOpportunities || ''],
+    updatedDate: ['Updated Time', (c) => c.updatedDate || ''],
+}
 
 export default function PlacementReadyController() {
     const corporateId = Corporate?._id
+
+    const router = useRouter()
+
+    const [visibleColumns, setVisibleColumns] = useState(null)
+    const [columnsLoading, setColumnsLoading] = useState(true)
 
     const [candidates, setCandidates] = useState([])
     const [loading, setLoading] = useState(true)
@@ -56,6 +97,20 @@ export default function PlacementReadyController() {
     const [reportTotal, setReportTotal] = useState(0)
     const [reportPage, setReportPage] = useState(1)
     const [reportLoading, setReportLoading] = useState(false)
+
+    // Fetch which columns this company wants to see
+    useEffect(() => {
+        const fetchColumnSettings = async () => {
+            try {
+                const res = await xFetch({ path: '/services/profile/getPlacementColumns' })
+                const keys = (res?.columns || []).filter((c) => c.visible).map((c) => c.key)
+                setVisibleColumns(keys.length ? keys : null)
+            } catch (err) {
+                setVisibleColumns(null) // fallback: show everything
+            }
+        }
+        fetchColumnSettings().finally(() => setColumnsLoading(false))
+    }, [])
 
     // Fetch filter options once
     useEffect(() => {
@@ -191,47 +246,30 @@ export default function PlacementReadyController() {
 
     // ─── Client-side Export (using current page data) ──────
     const handleExport = () => {
-        if (!candidates.length) {
-            toast.warn('No data to export')
-            return
-        }
+      if (!candidates.length) {
+          toast.warn('No data to export')
+          return
+      }
 
-        const data = candidates.map(c => ({
-            Name: c.name || '',
-            Email: c.email || '',
-            Mobile: c.mobile || '',
-            Qualification: c.qualification || '',
-            'Year of Passing': c.yearOfPassing || '',
-            'Current City': c.currentCity || '',
-            'Job Profiles': formatArrayOrString(c.jobTags),
-            Batch: c.batchNames || '',
-            'Placement Status': c.placementStatus || '',
-            Resume: c.resumeName || '',
-            Course: c.course || '',
-            'Course Start': c.courseStartDate || '',
-            'Course End': c.courseEndDate || '',
-            'Job Status': c.jobStatus || '',
-            'Total Exp (Years)': c.totalExperience || '',
-            'Relevant Exp (Years)': c.relevantExperience || '',
-            'Last Organization': c.lastOrganizationName || '',
-            'Expected Job Type': c.expectedJobType || '',
-            'Expected Location': formatArrayOrString(c.expectedLocationPreference),
-            'Last Designation': c.lastDesignation || '',
-            'Expected Designation': c.expectedDesignation || '',
-            'Last CTC': c.lastCTC || '',
-            'Expected CTC': c.expectedCTC || '',
-            Remarks: c.remarks || '',
-            'Receive Job Opportunities': c.receiveJobOpportunities || '',
-            'Updated Time': c.updatedDate || ''
-        }))
+      // Only export the columns the company has chosen to show
+      const exportKeys = visibleColumns
+        ? visibleColumns.filter((key) => EXPORT_COLUMNS[key])
+        : Object.keys(EXPORT_COLUMNS)
 
-        const ws = XLSX.utils.json_to_sheet(data)
-        const wb = XLSX.utils.book_new()
-        XLSX.utils.book_append_sheet(wb, ws, 'Placement Ready')
-        XLSX.writeFile(wb, `placement-ready-page-${page}-${new Date().toISOString().slice(0,10)}.xlsx`)
-        toast.success('Current page exported')
+      const data = candidates.map((c) => {
+          const row = {}
+          exportKeys.forEach((key) => {
+              const [label, getValue] = EXPORT_COLUMNS[key]
+              row[label] = getValue(c)
+          })
+          return row
+      })
 
-        toast.success('Full report exported')
+      const ws = XLSX.utils.json_to_sheet(data)
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Placement Ready')
+      XLSX.writeFile(wb, `placement-ready-page-${page}-${new Date().toISOString().slice(0,10)}.xlsx`)
+      toast.success('Current page exported')
     }
 
     // Add handler functions
@@ -406,6 +444,14 @@ export default function PlacementReadyController() {
                   <BarChart3 size={16} />
                   Report
                 </button>
+
+                <button
+                  onClick={() => router.push('/placements/settings')}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 border border-gray-300 hover:bg-blue-50 hover:border-blue-300 text-sm font-semibold rounded-full shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <Settings size={16} />
+                  Settings
+                </button>
               </div>
 
               <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -457,7 +503,7 @@ export default function PlacementReadyController() {
           {/* Table Area */}
           <div className="flex-1 flex flex-col min-h-0 px-6 pb-6 overflow-hidden">
               <div className="flex-1 overflow-auto border border-gray-200 rounded-xl bg-white shadow-lg">
-                {loading ? (
+                {loading || columnsLoading ? (
                   <div className="flex items-center justify-center h-64 text-gray-500">
                     <div className="flex flex-col items-center gap-3">
                       <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
@@ -487,6 +533,7 @@ export default function PlacementReadyController() {
                       }
                       }}
                       corporateId={corporateId}
+                      visibleColumns={visibleColumns}
                   />
                 )}
               </div>
