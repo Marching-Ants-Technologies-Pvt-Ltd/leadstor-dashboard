@@ -39,7 +39,6 @@ export default function JoineePaymentForm({ payment_id }) {
     const [subServices, setSubServices] = useState([]);
     const [batch, setBatch] = useState([]);
     const [selectedProfileImage, setSelectedProfileImage] = useState(null);
-    const [hasStdFeeFromApi, setHasStdFeeFromApi] = useState(false);
     const [hasTrackingCourseOnLoad, setHasTrackingCourseOnLoad] = useState(false);
     const isEditMode = Number(payment_id) > 0;
 
@@ -182,9 +181,20 @@ export default function JoineePaymentForm({ payment_id }) {
         );
     };
 
+    const getCourseFromMasterList = (label = '') => {
+        const normalizedLabel = `${label}`.trim().toLowerCase();
+        if (!normalizedLabel || !Array.isArray(courseFee) || courseFee.length < 1) {
+            return null;
+        }
+
+        return courseFee.find(item =>
+            `${item?.course ?? ''}`.trim().toLowerCase() === normalizedLabel
+        ) ?? null;
+    };
+
     const hasCourseMasterList = Array.isArray(courseFee) && courseFee.length > 0;
     const isMissingCourseFromMaster = Boolean(candidate?.label) && hasCourseMasterList && !isCourseAvailableInMasterList(candidate?.label);
-    const isManualAgreedOnlyMode = (!hasCourseMasterList) || (isEditMode && !hasStdFeeFromApi && hasTrackingCourseOnLoad);
+    const isManualAgreedOnlyMode = (!hasCourseMasterList) || (isEditMode && hasTrackingCourseOnLoad && isMissingCourseFromMaster);
     const hasExistingCourseInTracking = isEditMode && hasTrackingCourseOnLoad;
 
     const calculatePaymentBreakdown = (baseData = {}, recalculateAgreed = true) => {
@@ -214,6 +224,13 @@ export default function JoineePaymentForm({ payment_id }) {
         return updated;
     };
 
+    const isWholeNumberInput = (value) => {
+        if (value === undefined || value === null || value === '') return true;
+        return /^\d+$/.test(String(value).trim());
+    };
+
+    const isWholeNumberField = (key) => ['agreedPayment', 'discount'].includes(key);
+
     const onInfoChange = (key, value) => {
         if (key === 'batchId') {
             setCandidate(prev => ({
@@ -236,28 +253,26 @@ export default function JoineePaymentForm({ payment_id }) {
 
         // Update Standard Fee If Course is Changed
         if (key === 'label') {
-            if (isManualAgreedOnlyMode) return;
+            const course = getCourseFromMasterList(value);
 
-            let course = courseFee.filter(item => item.course.trim().toLowerCase() === value.trim().toLowerCase());
-            if (course.length < 1) {
-                course = [{
-                    standardFee: 0,
-                    maximumDiscount: 0
-                }]
-            }
-
-            course = course[0];
-            course['maximumDiscountedFees'] = calculateMaxDiscount(course?.standardFee ?? '0', course?.maximumDiscount ?? '0');
             setCandidate(prev => {
                 const nextValue = {
                     ...prev,
                     label: value,
                     batchId: [],
-                    discount: 0,
-                    stdFee: parseInt(course?.standardFee ?? '0'),
-                    maximumDiscount: parseInt(course?.maximumDiscount ?? '0'),
-                    maximumDiscountedFees: course?.maximumDiscountedFees
                 };
+
+                if (!course) {
+                    return nextValue;
+                }
+
+                nextValue.discount = 0;
+                nextValue.stdFee = parseInt(course?.standardFee ?? '0');
+                nextValue.maximumDiscount = parseInt(course?.maximumDiscount ?? '0');
+                nextValue.maximumDiscountedFees = calculateMaxDiscount(
+                    course?.standardFee ?? '0',
+                    course?.maximumDiscount ?? '0'
+                );
 
                 return calculatePaymentBreakdown(nextValue, true);
             });
@@ -266,6 +281,13 @@ export default function JoineePaymentForm({ payment_id }) {
     }
 
     const handleKeyUp = (key, value) => {
+        if (isWholeNumberField(key)) {
+            const normalizedValue = `${value ?? ''}`.trim();
+            if (normalizedValue !== '' && !isWholeNumberInput(normalizedValue)) {
+                toast.warning(`${key === 'discount' ? 'Discount' : 'Agreed Payment'} must be a whole number.`);
+                return;
+            }
+        }
 
         setCandidate((prev) => {
 
@@ -388,6 +410,20 @@ export default function JoineePaymentForm({ payment_id }) {
         if (!validatePayload(payload)) {
             toast.warning('Some required fields are blank! Please check and try again.');
             return;
+        }
+
+        if (payload?.agreedPayment !== undefined && payload?.agreedPayment !== null && `${payload?.agreedPayment}`.trim() !== '') {
+            if (!isWholeNumberInput(payload?.agreedPayment)) {
+                toast.warning('Agreed Payment must be a whole number.');
+                return;
+            }
+        }
+
+        if (payload?.discount !== undefined && payload?.discount !== null && `${payload?.discount}`.trim() !== '') {
+            if (!isWholeNumberInput(payload?.discount)) {
+                toast.warning('Discount must be a whole number.');
+                return;
+            }
         }
 
         if (!isManualAgreedOnlyMode) {
@@ -538,7 +574,6 @@ export default function JoineePaymentForm({ payment_id }) {
             const hasTrackingCourse = `${candidateInfo?.label ?? ''}`.trim().length > 0;
             const useManualModeOnLoad = (!hasCourseOptions) || (isEditMode && hasCandidateRecord && !hasStdFee);
 
-            setHasStdFeeFromApi(hasStdFee);
             setHasTrackingCourseOnLoad(hasTrackingCourse);
             
             const totalGST = parseFloat(
