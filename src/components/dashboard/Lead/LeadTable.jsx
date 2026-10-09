@@ -152,7 +152,7 @@ export default function LeadsTable({
     };
     const isReadOnlySuperUser = userRoles.includes("Read Only Super User");
 
-    const syncSavedLeadView = () => {
+    const syncSavedLeadViewOLD = () => {
         const savedView = LeadSavedView.value();
 
         if (Array.isArray(savedView) && savedView.length > 0) {
