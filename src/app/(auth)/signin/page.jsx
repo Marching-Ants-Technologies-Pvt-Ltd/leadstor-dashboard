@@ -22,12 +22,13 @@ export default function SignIn() {
             .min(1, 'Password is required')
     })
 
+    const today = new Date();
     const router = useRouter();
     const { data: session, status } = useSession();
 
     useEffect(() => {
         if (status === 'authenticated') {
-            router.push('/profile');
+            router.push('/');
         }
 
         if (status === 'unauthenticated') {
@@ -241,7 +242,7 @@ export default function SignIn() {
                                 <div className="col-span-6">
                                     <div className="w-full mt-6 border-t pt-4 border-gray-300 md:flex md:items-center md:justify-between">
 
-                                        <span className="cursor-default text-sm text-gray-600 sm:text-center dark:text-gray-400">Copyright © 2024 <Link href="/" className="hover:underline">Leadstor.in</Link>
+                                        <span className="cursor-default text-sm text-gray-600 sm:text-center dark:text-gray-400">Copyright © {today.getFullYear()} <Link href="/" className="hover:underline">Leadstor.in</Link>
                                         </span>
 
                                         <ul className="flex flex-wrap items-center mt-3 text-sm font-normal text-gray-600 dark:text-gray-400 sm:mt-0">

@@ -152,6 +152,29 @@ export default function LeadsTable({
     };
     const isReadOnlySuperUser = userRoles.includes("Read Only Super User");
 
+    const syncSavedLeadViewOLD = () => {
+        const savedView = LeadSavedView.value();
+
+        if (Array.isArray(savedView) && savedView.length > 0) {
+            LeadFilters.setValue(savedView);
+            LeadSearch.reset();
+            showAppliedFilter(savedView);
+            return savedView;
+        }
+
+        if (LeadFilters.value().length > 0) {
+            LeadFilters.reset();
+        }
+
+        LeadSearch.reset();
+
+        if (typeof window !== 'undefined') {
+            window.__setAppliedFilters?.(null);
+        }
+
+        return [];
+    };
+
     const dataFormatters = {
         assignedUserId: (row) => {
             const id = Number(row?.assignedUserId);
@@ -236,7 +259,7 @@ export default function LeadsTable({
 
     useEffect(() => {
         const fetchSubordinates = async () => {
-            if ( User._id == -1 || userRoles.includes("Read Only Super User")) {
+            if (User._id == -1 || userRoles.includes("Read Only Super User")) {
                 setSubOrdinates(userRoles.includes("Read Only Super User") ? ['-1'] : [String(User._id)]);
                 setIsSubordinatesLoaded(true);
                 return;

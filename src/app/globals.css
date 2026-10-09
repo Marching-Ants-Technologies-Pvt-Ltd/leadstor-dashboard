@@ -712,3 +712,13 @@ textarea::placeholder {
         display: none;
     }
 }   
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.general-container {
+  height: calc(100vh - 260px);
+}

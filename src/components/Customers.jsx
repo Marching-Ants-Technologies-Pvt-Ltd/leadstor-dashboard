@@ -18,8 +18,8 @@ export default function Customers() {
 
     return (
         <>
-            <section id='customer' className="bg-white pt-12">
-                <div className="flex justify-center align-middle">
+            <section id='customer' className="bg-white pt-6">
+                <div className="hidden justify-center align-middle">
                     <h2 className="bg-blue-100 px-6 py-2 rounded-full font-medium text-sm text-gray-800 uppercase">Our Customers</h2>
                 </div>
                 <h3 className="mb-16 mt-10 poppins text-gray-700 text-center text-xl px-3 sm:text-3xl font-semibold">Trusted by over 100+ organizations around the world</h3>

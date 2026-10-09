@@ -1,16 +1,17 @@
 'use client';
 
+import { TourProvider } from '@reactour/tour'
 import 'remixicon/fonts/remixicon.css';
 import Sidebar from '@/components/dashboard/Navbar/Sidebar';
 import Navbar from '@/components/dashboard/Navbar/Navbar';
 import Loading from '@/components/elements/Loading';
-import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { SessionProvider, getSession } from "next-auth/react";
-import { LeadsCurrentPage,LeadFilters,LeadSearch, User } from '@/utility/TinyDB';
+import { LeadsCurrentPage, LeadFilters, LeadSearch, User } from '@/utility/TinyDB';
 import ReminderPopup from '@/components/ReminderPopup';
+import CorporateInstallmentReminder from './CorporateInstallmentReminder';
 
 export default function ClientLayout({ children }) {
   const [session, setSession] = useState(null);
@@ -25,7 +26,18 @@ export default function ClientLayout({ children }) {
         router.push('/signin');
         return;
       }
+
+      // Get current session data from localstorage
       const data = JSON.parse(localStorage.getItem('CurrentSessionData'));
+      
+      // User is trying to access directly, without proper session initialization
+      // So redirect back to main controller to verify and set session properly.
+      // This is to avoid direct access when payment overdue.
+      if (!data) {
+        router.push('/');
+        return;
+      }
+
       setSession(data);
     };
 
@@ -57,18 +69,18 @@ export default function ClientLayout({ children }) {
 
   const pageInfo = getPageInfo(pathname);
 
-    useEffect(() => {
-      LeadFilters.reset();
-      LeadSearch?.reset?.(); // if search is also persisted
-      LeadsCurrentPage.setValue(1);
+  useEffect(() => {
+    LeadFilters.reset();
+    LeadSearch?.reset?.(); // if search is also persisted
+    LeadsCurrentPage.setValue(1);
 
-      window.refreshLeadMenu?.();
-      window.tableRefresh?.();
-      window.onTableRefresh?.();
+    window.refreshLeadMenu?.();
+    window.tableRefresh?.();
+    window.onTableRefresh?.();
 
-      return () => {
-        delete window.tableRefresh;
-      };
+    return () => {
+      delete window.tableRefresh;
+    };
   }, []);
 
 
@@ -76,23 +88,27 @@ export default function ClientLayout({ children }) {
 
   return (
     <SessionProvider>
-      <ToastContainer position="top-right" autoClose={3000} />
-      <div className="flex h-screen overflow-hidden bg-[#f5f6f8] font-[-apple-system,BlinkMacSystemFont,Segoe_UI,Arial]">
-        {/* Sidebar */}
-        <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} userRole={User?.role || ''} />
+      <TourProvider>
+        <div className="flex h-screen overflow-hidden bg-[#f5f6f8] font-[-apple-system,BlinkMacSystemFont,Segoe_UI,Arial]">
+          {/* Sidebar */}
+          <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} userRole={User?.role || ''} />
 
-        <div className="flex flex-col flex-1 min-w-0">
-          {/* Navbar / Header */}
-          <Navbar data={session} collapsed={collapsed} setCollapsed={setCollapsed} />
+          <div className="flex flex-col flex-1 min-w-0">
+            {/* Subscription Reminder */}
+            <CorporateInstallmentReminder />
+            
+            {/* Navbar */}
+            <Navbar data={session} collapsed={collapsed} setCollapsed={setCollapsed} />
 
-          <div className="flex-1 overflow-hidden flex flex-col">
-            {/* Main content area */}
+            <div className="flex-1 overflow-hidden flex flex-col">
+              {/* Main content area */}
               {children}
               {/* ✅ SSE Listener mounted globally */}
               <ReminderPopup />
+            </div>
           </div>
         </div>
-      </div>
+      </TourProvider>
     </SessionProvider>
   );
 }
