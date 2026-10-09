@@ -8,6 +8,7 @@ import DayPickerModal from '@/components/elements/DayPickerModel';
 import JoineeInstallmentNotFound from './notFound';
 import JoineePaymentAnalytics from './analytics';
 import JoineeInstallments from './installments';
+import InstallmentHistory from './installmentHistory';
 import JoineeInstallmentForm from './installmentForm';
 import {
     SelectFieldTypeArray,
@@ -42,6 +43,7 @@ export default function JoineePaymentForm({ payment_id }) {
     const [hasStdFeeFromApi, setHasStdFeeFromApi] = useState(false);
     const [hasTrackingCourseOnLoad, setHasTrackingCourseOnLoad] = useState(false);
     const isEditMode = Number(payment_id) > 0;
+    const [showHistory, setShowHistory] = useState(true);
 
     // Helper Functions
     const pad = (n) => String(n).padStart(2, "0");
@@ -449,13 +451,14 @@ export default function JoineePaymentForm({ payment_id }) {
                     setTimeout(() => {
                         router.push(`/payments/${data.id}`);
                     }, 800);
-                    
+
                     return;
                 }
 
                 // Case 2: Update / Edit existing record
-                if (data.event === 'UPDATED' ||  data.id) {   // fallback if only id is returned
+                if (data.event === 'UPDATED' || data.id) {   // fallback if only id is returned
                     toast.success('Changes Saved Successfully.');
+                    window.location.reload();
                     return;
                 }
 
@@ -499,115 +502,115 @@ export default function JoineePaymentForm({ payment_id }) {
                 responseType: 'text'
             })
         ])
-        .then(([filterParams, courseFee, subServices, batch, currencyList, candidateInfoRaw]) => {
-            if (!isMounted) return;
-            const candidateInfo = parseCandidateTrackingResponse(candidateInfoRaw);
-            setFilterParams(filterParams);
-            setCurrency(currencyList);
-            const hasCourseOptions = Array.isArray(courseFee) && courseFee.length > 0;
-            const hasExistingIdentifier = Boolean(
-                candidateInfo?.trackingId ||
-                candidateInfo?.id ||
-                candidateInfo?._id
-            );
+            .then(([filterParams, courseFee, subServices, batch, currencyList, candidateInfoRaw]) => {
+                if (!isMounted) return;
+                const candidateInfo = parseCandidateTrackingResponse(candidateInfoRaw);
+                setFilterParams(filterParams);
+                setCurrency(currencyList);
+                const hasCourseOptions = Array.isArray(courseFee) && courseFee.length > 0;
+                const hasExistingIdentifier = Boolean(
+                    candidateInfo?.trackingId ||
+                    candidateInfo?.id ||
+                    candidateInfo?._id
+                );
 
-            const hasExistingFilledCoreData = Boolean(
-                `${candidateInfo?.name ?? ''}`.trim() ||
-                `${candidateInfo?.email ?? ''}`.trim() ||
-                `${candidateInfo?.mobile ?? ''}`.trim() ||
-                `${candidateInfo?.doj ?? ''}`.trim() ||
-                `${candidateInfo?.lastUpdateDateTime ?? ''}`.trim()
-            );
+                const hasExistingFilledCoreData = Boolean(
+                    `${candidateInfo?.name ?? ''}`.trim() ||
+                    `${candidateInfo?.email ?? ''}`.trim() ||
+                    `${candidateInfo?.mobile ?? ''}`.trim() ||
+                    `${candidateInfo?.doj ?? ''}`.trim() ||
+                    `${candidateInfo?.lastUpdateDateTime ?? ''}`.trim()
+                );
 
-            const hasInstallments = Object.keys(candidateInfo?.installments ?? {}).length > 0;
+                const hasInstallments = Object.keys(candidateInfo?.installments ?? {}).length > 0;
 
-            const hasCandidateRecord = (
-                candidateInfo &&
-                typeof candidateInfo === 'object' &&
-                candidateInfo?.type !== 'notFund' &&
-                (hasExistingIdentifier || hasExistingFilledCoreData || hasInstallments)
-            );
+                const hasCandidateRecord = (
+                    candidateInfo &&
+                    typeof candidateInfo === 'object' &&
+                    candidateInfo?.type !== 'notFund' &&
+                    (hasExistingIdentifier || hasExistingFilledCoreData || hasInstallments)
+                );
 
-            const rawStdFee = candidateInfo?.stdFee;
-            const hasStdFee = !(
-                rawStdFee === undefined ||
-                rawStdFee === null ||
-                `${rawStdFee}`.trim() === '' ||
-                Number(rawStdFee) <= 0
-            );
-            const hasTrackingCourse = `${candidateInfo?.label ?? ''}`.trim().length > 0;
-            const useManualModeOnLoad = (!hasCourseOptions) || (isEditMode && hasCandidateRecord && !hasStdFee);
+                const rawStdFee = candidateInfo?.stdFee;
+                const hasStdFee = !(
+                    rawStdFee === undefined ||
+                    rawStdFee === null ||
+                    `${rawStdFee}`.trim() === '' ||
+                    Number(rawStdFee) <= 0
+                );
+                const hasTrackingCourse = `${candidateInfo?.label ?? ''}`.trim().length > 0;
+                const useManualModeOnLoad = (!hasCourseOptions) || (isEditMode && hasCandidateRecord && !hasStdFee);
 
-            setHasStdFeeFromApi(hasStdFee);
-            setHasTrackingCourseOnLoad(hasTrackingCourse);
-            
-            const totalGST = parseFloat(
-                candidateInfo?.gst ??
-                0
-            );
+                setHasStdFeeFromApi(hasStdFee);
+                setHasTrackingCourseOnLoad(hasTrackingCourse);
 
-            let cgst = parseFloat(candidateInfo?.cgst || 0);
-            let sgst = parseFloat(candidateInfo?.sgst || 0);
+                const totalGST = parseFloat(
+                    candidateInfo?.gst ??
+                    0
+                );
 
-            // If backend sends 0/0 but gst exists,
-            // split total GST equally
-            if (cgst === 0 && sgst === 0 && totalGST > 0) {
-                cgst = totalGST / 2;
-                sgst = totalGST / 2;
-            }
+                let cgst = parseFloat(candidateInfo?.cgst || 0);
+                let sgst = parseFloat(candidateInfo?.sgst || 0);
 
-            if (useManualModeOnLoad) {
-                setCandidate({
-                    ...candidateInfo,
-                    cgst: String(Number.isFinite(cgst) ? cgst : 0),
-                    sgst: String(Number.isFinite(sgst) ? sgst : 0),
-                    gst: String(Number(candidateInfo?.gst ?? 0) || 0),
-                    agreedPayment:
-                        (candidateInfo?.agreedPayment !== undefined &&
-                            candidateInfo?.agreedPayment !== null &&
-                            `${candidateInfo?.agreedPayment}`.trim() !== '')
+                // If backend sends 0/0 but gst exists,
+                // split total GST equally
+                if (cgst === 0 && sgst === 0 && totalGST > 0) {
+                    cgst = totalGST / 2;
+                    sgst = totalGST / 2;
+                }
+
+                if (useManualModeOnLoad) {
+                    setCandidate({
+                        ...candidateInfo,
+                        cgst: String(Number.isFinite(cgst) ? cgst : 0),
+                        sgst: String(Number.isFinite(sgst) ? sgst : 0),
+                        gst: String(Number(candidateInfo?.gst ?? 0) || 0),
+                        agreedPayment:
+                            (candidateInfo?.agreedPayment !== undefined &&
+                                candidateInfo?.agreedPayment !== null &&
+                                `${candidateInfo?.agreedPayment}`.trim() !== '')
+                                ? candidateInfo?.agreedPayment
+                                : ''
+                    });
+                } else {
+                    const calculatedCandidate = calculatePaymentBreakdown({
+                        ...candidateInfo,
+                        stdFee: candidateInfo?.stdFee ?? 0,
+                        discount: candidateInfo?.discount ?? 0,
+                        agreedPayment: candidateInfo?.agreedPayment ?? 0,
+                        cgst: String(Number.isFinite(cgst) ? cgst : 0),
+                        sgst: String(Number.isFinite(sgst) ? sgst : 0),
+                    }, false);
+
+                    // On edit hydration, keep API agreedPayment as-is.
+                    const hasApiAgreedPayment =
+                        candidateInfo?.agreedPayment !== undefined &&
+                        candidateInfo?.agreedPayment !== null &&
+                        `${candidateInfo?.agreedPayment}`.trim() !== '';
+
+                    setCandidate({
+                        ...calculatedCandidate,
+                        gst: String(
+                            Number(calculatedCandidate?.gst ?? 0)
+                        ),
+                        agreedPayment: hasApiAgreedPayment
                             ? candidateInfo?.agreedPayment
-                            : ''
-                });
-            } else {
-                const calculatedCandidate = calculatePaymentBreakdown({
-                    ...candidateInfo,
-                    stdFee: candidateInfo?.stdFee ?? 0,
-                    discount: candidateInfo?.discount ?? 0,
-                    agreedPayment: candidateInfo?.agreedPayment ?? 0,
-                    cgst: String(Number.isFinite(cgst) ? cgst : 0),
-                    sgst: String(Number.isFinite(sgst) ? sgst : 0),
-                }, false);
+                            : calculatedCandidate?.agreedPayment
+                    });
+                }
 
-                // On edit hydration, keep API agreedPayment as-is.
-                const hasApiAgreedPayment =
-                    candidateInfo?.agreedPayment !== undefined &&
-                    candidateInfo?.agreedPayment !== null &&
-                    `${candidateInfo?.agreedPayment}`.trim() !== '';
+                setSelectedProfileImage(null);
+                setCourseFee(courseFee);
+                setSubServices(subServices);
+                setBatch(batch);
 
-                setCandidate({
-                    ...calculatedCandidate,
-                    gst: String(
-                        Number(calculatedCandidate?.gst ?? 0)
-                    ),
-                    agreedPayment: hasApiAgreedPayment
-                        ? candidateInfo?.agreedPayment
-                        : calculatedCandidate?.agreedPayment
-                });
-            }
-
-            setSelectedProfileImage(null);
-            setCourseFee(courseFee);
-            setSubServices(subServices);
-            setBatch(batch);
-
-            // Set Current Currency
-            let cnc = currencyList?.[candidateInfo?.candidate_currency ?? 'x'] ?? {};
-            setCurrentCurrency(cnc?.currency_html_code ?? '₹');
-        })
-        .catch(error => {
-            console.error('Error loading initial data', error);
-        });
+                // Set Current Currency
+                let cnc = currencyList?.[candidateInfo?.candidate_currency ?? 'x'] ?? {};
+                setCurrentCurrency(cnc?.currency_html_code ?? '₹');
+            })
+            .catch(error => {
+                console.error('Error loading initial data', error);
+            });
 
         return () => {
             isMounted = false;
@@ -784,19 +787,19 @@ export default function JoineePaymentForm({ payment_id }) {
                                 )}
                             </div>
                             {Array.isArray(subServices) && subServices.length > 0 && (
-                            <MultiSelectField
-                                label="Sub Service"
-                                options={subServices.map(
-                                    (item) => ({
-                                        id: item.id,
-                                        value: item.subService,
-                                        tag: item.subService,
-                                    })
-                                )}
-                                selected={candidate?.subServiceId ?? []}
-                                cbOnChange={onInfoChange}
-                                fieldName='subServiceId'
-                            />
+                                <MultiSelectField
+                                    label="Sub Service"
+                                    options={subServices.map(
+                                        (item) => ({
+                                            id: item.id,
+                                            value: item.subService,
+                                            tag: item.subService,
+                                        })
+                                    )}
+                                    selected={candidate?.subServiceId ?? []}
+                                    cbOnChange={onInfoChange}
+                                    fieldName='subServiceId'
+                                />
                             )}
 
                             <SelectFieldTypeArray
@@ -816,7 +819,7 @@ export default function JoineePaymentForm({ payment_id }) {
                                 fieldName='associatedCenters'
                                 required={false}
                             />
-                            
+
                             <MultiSelectField
                                 label="Batch / Intake"
                                 options={batch.map(
@@ -830,7 +833,7 @@ export default function JoineePaymentForm({ payment_id }) {
                                 cbOnChange={onInfoChange}
                                 fieldName='batchId'
                             />
-                            
+
                             <InputText
                                 cbOnChange={handleKeyUp}
                                 label="Current Address"
@@ -1096,7 +1099,16 @@ export default function JoineePaymentForm({ payment_id }) {
                         installments={candidate?.installments ?? {}}
                         onInstallmentEdit={setCurrentInstallment}
                         onInstallmentDelete={handleDeleteInstallment}
+                        onInstallmentHistory={() => setShowHistory(true)}
                     />
+
+                    {showHistory &&
+                        <InstallmentHistory
+                            currency={decodeHtml(currentCurrency)}
+                            trackingId={payment_id}
+                            onClose={() => setShowHistory(false)}
+                        />
+                    }
                 </div>
 
             </div>

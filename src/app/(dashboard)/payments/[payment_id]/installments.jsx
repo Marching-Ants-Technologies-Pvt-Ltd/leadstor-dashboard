@@ -6,7 +6,8 @@ export default function JoineeInstallments({
     installments = {},
     currency = '₹',
     onInstallmentEdit = (e) => { },
-    onInstallmentDelete = (e) => { }
+    onInstallmentDelete = (e) => { },
+    onInstallmentHistory = (e) => { },
 }) {
 
     const [deleteInstallment, setDeleteInstallment] = useState(null);
@@ -37,14 +38,27 @@ export default function JoineeInstallments({
 
     const addNewInstallment = () => {
         onInstallmentEdit({ count: Items.length + 1, type: 'Create', currencyIcon: currency, date: todayStr });
-    } 
+    }
 
     return (
         <div className="bg-white border border-gray-200 rounded-[10px] p-5 mt-5">
 
-            <h4 className="text-sm font-semibold mb-1">
-                Installments
-            </h4>
+            <div className='flex justify-between items-center mb-5'>
+                <div>
+                    <h4 className="text-lg font-semibold">
+                        Installments
+                    </h4>
+                    <p className='-mt-0.5 text-sm text-gray-600'>Create, view & manage Installments</p>
+                </div>
+                <div className='flex justify-center items-center gap-2'>
+                    <button onClick={addNewInstallment} className="px-3 py-2 text-[13px] bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        ✚ Add New
+                    </button>
+                    <button onClick={onInstallmentHistory} className=" px-3 py-2 text-[13px] bg-gray-100 border border-x-gray-300 text-gray-700 rounded-md hover:bg-gray-200 font-semibold">
+                        📅 View History
+                    </button>
+                </div>
+            </div>
 
             <ConfirmDelete
                 open={deleteInstallment}
@@ -74,9 +88,7 @@ export default function JoineeInstallments({
                             />
                         ))}
                     </div>
-                    <button onClick={addNewInstallment} className="mt-6 px-3 py-2 text-[13px] bg-blue-600 text-white rounded-md hover:bg-blue-800">
-                        ✚ Add Installment
-                    </button>
+
                 </div>
             ) : (
                 <div className="bg-green-50 rounded-md w-full min-h-52 flex justify-center items-center flex-col mt-3">
@@ -93,6 +105,7 @@ export default function JoineeInstallments({
                 </div>
             )}
 
+            
         </div>
     )
 }
