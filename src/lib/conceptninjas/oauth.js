@@ -8,7 +8,7 @@ const oauth = async ({
     auth_provider = "NA"
 }) => {
 
-    const service_url = process.env.CONCEPTNINJAS_URL;
+    const service_url = `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/leadstor`;
 
     const myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
@@ -35,6 +35,7 @@ const oauth = async ({
     try {
         const response = await fetch(`${service_url}/${suffix}`, requestOptions);
         const result = await response.json();
+        // console.log({service_url, suffix, body: requestOptions, result, code: response.status});
         return result;
     } catch (error) {
         return { error: error.message || 'An unknown error occurred' };

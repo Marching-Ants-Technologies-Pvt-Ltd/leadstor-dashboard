@@ -119,7 +119,7 @@ export default function LeadsTablePagination({ columns, setColumns, columnOrder,
             {!isMobile && (
                 <>
                     <div className="flex items-center gap-6 text-sm text-slate-600">
-                        <div className='border-r pr-4 flex justify-center items-center'>
+                        <div className='border-r pr-4 flex justify-center items-center leads-enquiries-count'>
                             {isLoading && (
                             <div className="spinner-simple w-5 h-5 mr-2 border-[2px]" />
                             )}
@@ -133,7 +133,7 @@ export default function LeadsTablePagination({ columns, setColumns, columnOrder,
                                         tabIndex={0}
                                     >
                                         Enquiries per page
-                                        <div className="relative ml-2">
+                                        <div className="relative ml-2 leads-page-size-btn">
                                             <span
                                                 className='group border px-3 rounded-md py-0.5 cursor-pointer bg-white hover:bg-gray-50 transition-colors'
                                                 onClick={() => setShowPerPageDropdown(open => !open)}
@@ -184,12 +184,12 @@ export default function LeadsTablePagination({ columns, setColumns, columnOrder,
                             {/* Scrollbars and fullscreen buttons only on desktop */}
                             <div className="flex items-center text-gray-500 pt-1 justify-center cursor-pointer">
                                 <span className="tooltip tooltip-top" data-tooltip="View Fullscreen">
-                                    <button onClick={fullScreenSwitch} className="ri-fullscreen-line text-lg ml-2"></button>
+                                    <button onClick={fullScreenSwitch} className="ri-fullscreen-line text-lg ml-2 leads-fullscreen-btn"></button>
                                 </span>
                             </div>
                         </div>
                     </div>
-                    <div className='pagination ml-6 flex items-center gap-x-2' onClick={handelPageChange}>
+                    <div className='pagination ml-6 flex items-center gap-x-2 leads-pagination' onClick={handelPageChange}>
                         {downloadNotification?.hasActiveDownload && (
                             <button
                                 onClick={e => { 

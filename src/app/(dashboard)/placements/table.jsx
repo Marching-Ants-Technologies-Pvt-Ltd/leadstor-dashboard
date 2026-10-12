@@ -14,6 +14,7 @@ export default function PlacementReadyTable({
   onDelete,
   onViewDetails,
   corporateId,
+  visibleColumns = null,
 }) {
   const allIds = useMemo(() => rows.map(r => r.id), [rows]);
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
@@ -177,9 +178,270 @@ export default function PlacementReadyTable({
     }));
   };
 
+  const columns = [
+    {
+      key: 'name', label: 'Name', minW: 'min-w-40', tdClass: '',
+      render: (item) => (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onEdit?.(item)}
+            className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+            title="Edit candidate"
+          >
+            <Pencil size={14} />
+          </button>
+          <span className="font-semibold text-gray-900">{item.name || '-'}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'email', label: 'Email', minW: 'min-w-52', tdClass: 'text-gray-600',
+      render: (item) => (
+        <a href={`mailto:${item.email}`} className="hover:text-blue-600 hover:underline transition-colors">
+          {item.email || '-'}
+        </a>
+      ),
+    },
+    {
+      key: 'mobile', label: 'Mobile', minW: 'min-w-36', tdClass: '',
+      render: (item) => {
+        const hasMobile = item.mobile && item.mobile.length > 3;
+        return (
+          <div className="flex items-center gap-2">
+            <span className="text-gray-600">{item.mobile || '-'}</span>
+            {hasMobile && (
+              <a
+                href={`https://wa.me/${item.mobile.replace(/\D/g, '')}?text=Hello`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1 hover:bg-green-50 rounded transition-colors"
+                title="Send WhatsApp message"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                  color="#4CAF50"
+                  fill="none"
+                  stroke="#4CAF50"
+                  strokeWidth="1.5"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 13.3789 2.27907 14.6926 2.78382 15.8877C3.06278 16.5481 3.20226 16.8784 3.21953 17.128C3.2368 17.3776 3.16334 17.6521 3.01642 18.2012L2 22L5.79877 20.9836C6.34788 20.8367 6.62244 20.7632 6.87202 20.7805C7.12161 20.7977 7.45185 20.9372 8.11235 21.2162C9.30745 21.7209 10.6211 22 12 22Z" />
+                  <path d="M8.58815 12.3773L9.45909 11.2956C9.82616 10.8397 10.2799 10.4153 10.3155 9.80826C10.3244 9.65494 10.2166 8.96657 10.0008 7.58986C9.91601 7.04881 9.41086 7 8.97332 7C8.40314 7 8.11805 7 7.83495 7.12931C7.47714 7.29275 7.10979 7.75231 7.02917 8.13733C6.96539 8.44196 7.01279 8.65187 7.10759 9.07169C7.51023 10.8548 8.45481 12.6158 9.91948 14.0805C11.3842 15.5452 13.1452 16.4898 14.9283 16.8924C15.3481 16.9872 15.558 17.0346 15.8627 16.9708C16.2477 16.8902 16.7072 16.5229 16.8707 16.165C17 15.8819 17 15.5969 17 15.0267C17 14.5891 16.9512 14.084 16.4101 13.9992C15.0334 13.7834 14.3451 13.6756 14.1917 13.6845C13.5847 13.7201 13.1603 14.1738 12.7044 14.5409L11.6227 15.4118" />
+                </svg>
+              </a>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      key: 'qualification', label: 'Qualification', minW: 'min-w-32', tdClass: 'text-gray-600',
+      render: (item) => (
+        <span className="inline-flex items-center px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full">
+          {item.qualification || '-'}
+        </span>
+      ),
+    },
+    {
+      key: 'yearOfPassing', label: 'YOP', minW: 'min-w-28', tdClass: 'text-gray-600',
+      render: (item) => item.yearOfPassing || '-',
+    },
+    {
+      key: 'currentCity', label: 'Current City', minW: 'min-w-32', tdClass: 'text-gray-600',
+      render: (item) => (
+        <div className="flex items-center gap-1">
+          <MapPin size={12} className="text-gray-400" />
+          {item.currentCity || '-'}
+        </div>
+      ),
+    },
+    {
+      key: 'jobTags', label: 'Job Profiles', minW: 'min-w-44', tdClass: '',
+      render: (item) =>
+        item.jobTags?.length ? (
+          <div className="flex flex-wrap gap-1.5">
+            {item.jobTags.map((tag, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center px-2.5 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full border border-blue-200"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        ) : (
+          '-'
+        ),
+    },
+    {
+      key: 'placementStatus', label: 'Placement Status', minW: 'min-w-44', tdClass: '',
+      render: (item) => (
+        <button
+          onClick={() => handleStatusClick(item)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 text-xs font-semibold rounded-full border border-blue-200 hover:shadow-md transition-all cursor-pointer"
+          title="Change placement status"
+        >
+          <Briefcase size={12} />
+          {getCleanStatus(item.placementStatus)}
+        </button>
+      ),
+    },
+    {
+      key: 'resume', label: 'Resume', minW: 'min-w-52', tdClass: '',
+      render: (item) =>
+        item.resumeName ? (
+          <button
+            onClick={() => downloadResume(item.candidateId, item.resumeName)}
+            className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 hover:underline transition-colors font-medium"
+            title="Download Resume"
+          >
+            <Download size={14} />
+            {item.resumeName}
+          </button>
+        ) : (
+          <span className="text-gray-400">-</span>
+        ),
+    },
+    {
+      key: 'course', label: 'Course', minW: 'min-w-32', tdClass: 'text-gray-600',
+      render: (item) => (
+        <div className="flex items-center gap-1">
+          <Calendar size={12} className="text-gray-400" />
+          {item.course || '-'}
+        </div>
+      ),
+    },
+    {
+      key: 'courseStartDate', label: 'Course Start', minW: 'min-w-36', tdClass: 'text-gray-600',
+      render: (item) => item.courseStartDate || '-',
+    },
+    {
+      key: 'courseEndDate', label: 'Course End', minW: 'min-w-36', tdClass: 'text-gray-600',
+      render: (item) => item.courseEndDate || '-',
+    },
+    {
+      key: 'batchNames', label: 'Batch', minW: 'min-w-36', tdClass: '',
+      render: (item) =>
+        item.batchNames ? (
+          <div className="flex flex-wrap gap-1.5">
+            {item.batchNames.split(',').map((batch, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center px-2.5 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full border border-blue-200"
+              >
+                {batch.trim()}
+              </span>
+            ))}
+          </div>
+        ) : (
+          '-'
+        ),
+    },
+    {
+      key: 'associatedCenters', label: 'Associated Center', minW: 'min-w-36', tdClass: 'text-gray-600',
+      render: (item) => item.associatedCenters || '-',
+    },
+    {
+      key: 'jobStatus', label: 'Job Status', minW: 'min-w-28', tdClass: '',
+      render: (item) => (
+        <span
+          className={`inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full ${
+            item.jobStatus === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'
+          }`}
+        >
+          {item.jobStatus || '-'}
+        </span>
+      ),
+    },
+    {
+      key: 'totalExperience', label: 'Total Exp', minW: 'min-w-28', center: true, tdClass: 'text-center text-gray-600',
+      render: (item) => (item.totalExperience ? `${item.totalExperience} yrs` : '-'),
+    },
+    {
+      key: 'relevantExperience', label: 'Relevant Exp', minW: 'min-w-28', center: true, tdClass: 'text-center text-gray-500',
+      render: (item) => (item.relevantExperience ? `${item.relevantExperience} yrs` : '-'),
+    },
+    {
+      key: 'lastOrganizationName', label: 'Last Org', minW: 'min-w-44', tdClass: 'text-gray-600',
+      render: (item) => item.lastOrganizationName || '-',
+    },
+    {
+      key: 'expectedJobType', label: 'Exp Job Type', minW: 'min-w-40', tdClass: 'text-gray-600',
+      render: (item) => item.expectedJobType || '-',
+    },
+    {
+      key: 'expectedLocationPreference', label: 'Exp Location', minW: 'min-w-44', tdClass: 'text-gray-600',
+      render: (item) =>
+        Array.isArray(item.expectedLocationPreference)
+          ? item.expectedLocationPreference.join(', ')
+          : item.expectedLocationPreference || '-',
+    },
+    {
+      key: 'lastDesignation', label: 'Last Desig', minW: 'min-w-40', tdClass: 'text-gray-600',
+      render: (item) => item.lastDesignation || '-',
+    },
+    {
+      key: 'expectedDesignation', label: 'Exp Desig', minW: 'min-w-40', tdClass: 'text-gray-600',
+      render: (item) => item.expectedDesignation || '-',
+    },
+    {
+      key: 'lastCTC', label: 'Last CTC', minW: 'min-w-28', center: true, tdClass: 'text-center text-gray-600',
+      render: (item) => (item.lastCTC ? `₹${item.lastCTC} L` : '-'),
+    },
+    {
+      key: 'expectedCTC', label: 'Exp CTC', minW: 'min-w-28', center: true, tdClass: 'text-center text-gray-600',
+      render: (item) => (item.expectedCTC ? `₹${item.expectedCTC} L` : '-'),
+    },
+    {
+      key: 'remarks', label: 'Remarks', minW: 'min-w-52', tdClass: 'text-gray-600 max-w-xs',
+      render: (item) =>
+        item.remarks ? (
+          <div className="max-w-xs">
+            <div
+              className={`text-sm leading-5 whitespace-pre-wrap break-words ${
+                expandedRemarks[item.id] ? '' : 'line-clamp-2'
+              }`}
+            >
+              {item.remarks}
+            </div>
+
+            {item.remarks.length > 100 && (
+              <button
+                type="button"
+                onClick={() => toggleRemarks(item.id)}
+                className="mt-1 text-blue-600 hover:text-blue-800 text-xs font-semibold hover:underline"
+              >
+                {expandedRemarks[item.id] ? 'View Less' : 'View More'}
+              </button>
+            )}
+          </div>
+        ) : (
+          '-'
+        ),
+    },
+    {
+      key: 'receiveJobOpportunities', label: 'Receive Job Opp', minW: 'min-w-44', tdClass: 'text-gray-600',
+      render: (item) => item.receiveJobOpportunities || '-',
+    },
+    {
+      key: 'updatedDate', label: 'Updated', minW: 'min-w-44', tdClass: 'text-gray-500 text-xs',
+      render: (item) => item.updatedDate || '-',
+    },
+  ];
+
+  // null/undefined = show all (before settings load or if the call failed)
+  const visibleCols = visibleColumns
+    ? visibleColumns
+        .map((key) => columns.find((col) => col.key === key))
+        .filter(Boolean)
+    : columns;
+
   return (
     <>
-    <table className="text-[13px] border-collapse bg-white w-full" id="placementCandidatesTable">
+     <table className="text-[13px] border-collapse bg-white w-full" id="placementCandidatesTable">
       <thead className="bg-gradient-to-r from-blue-50 via-white to-blue-50 sticky top-0 z-10">
         <tr className="border-b border-blue-200">
           <th className="p-3 w-10">
@@ -190,40 +452,21 @@ export default function PlacementReadyTable({
               onChange={(e) => handleSelectAll()}
             />
           </th>
-          <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-40">Name</th>
-          <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-52">Email</th>
-          <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-36">Mobile</th>
-          <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-32">Qualification</th>
-          <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-28">YOP</th>
-          <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-32">Current City</th>
-          <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-44">Job Profiles</th>
-          <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-44">Placement Status</th>
-          <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-52">Resume</th>
-          <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-32">Course</th>
-          <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-36">Course Start</th>
-          <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-36">Course End</th>
-          <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-36">Batch</th>
-          <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-36">Associated Center</th>
-          <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-28">Job Status</th>
-          <th className="p-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider min-w-28">Total Exp</th>
-          <th className="p-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider min-w-28">Relevant Exp</th>
-          <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-44">Last Org</th>
-          <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-40">Exp Job Type</th>
-          <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-44">Exp Location</th>
-          <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-40">Last Desig</th>
-          <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-40">Exp Desig</th>
-          <th className="p-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider min-w-28">Last CTC</th>
-          <th className="p-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider min-w-28">Exp CTC</th>
-          <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-52">Remarks</th>
-          <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-44">Receive Job Opp</th>
-          <th className="p-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-44">Updated</th>
+          {visibleCols.map((col) => (
+            <th
+              key={col.key}
+              className={`p-3 ${col.center ? 'text-center' : 'text-left'} text-xs font-bold text-gray-700 uppercase tracking-wider ${col.minW}`}
+            >
+              {col.label}
+            </th>
+          ))}
         </tr>
       </thead>
 
       <tbody className="divide-y divide-gray-100">
         {rows.length === 0 ? (
           <tr>
-            <td colSpan={27} className="text-center py-16 text-gray-500">
+            <td colSpan={visibleCols.length + 1} className="text-center py-16 text-gray-500">
               <div className="flex flex-col items-center gap-3">
                 <div className="p-4 bg-gray-100 rounded-full">
                   <User size={40} className="text-gray-400" />
@@ -236,14 +479,13 @@ export default function PlacementReadyTable({
         ) : (
           rows.map((item) => {
             const isSelected = selectedSet.has(item.id);
-            const hasMobile = item.mobile && item.mobile.length > 3;
 
             return (
               <tr
                 key={item.id}
                 className={`hover:bg-blue-50 transition-colors ${
-                  isSelected 
-                    ? 'bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 border-l-4 border-blue-500' 
+                  isSelected
+                    ? 'bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 border-l-4 border-blue-500'
                     : 'border-l-4 border-transparent'
                 }`}
               >
@@ -256,197 +498,11 @@ export default function PlacementReadyTable({
                   />
                 </td>
 
-                <td className="p-3 align-top">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => onEdit?.(item)}
-                      className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                      title="Edit candidate"
-                    >
-                      <Pencil size={14} />
-                    </button>
-                    <span className="font-semibold text-gray-900">{item.name || '-'}</span>
-                  </div>
-                </td>
-
-                <td className="p-3 text-gray-600 align-top">
-                  <a href={`mailto:${item.email}`} className="hover:text-blue-600 hover:underline transition-colors">
-                    {item.email || '-'}
-                  </a>
-                </td>
-
-                <td className="p-3 align-top">
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-600">{item.mobile || '-'}</span>
-                    {hasMobile && (
-                      <a
-                        href={`https://wa.me/${item.mobile.replace(/\D/g, '')}?text=Hello`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-1 hover:bg-green-50 rounded transition-colors"
-                        title="Send WhatsApp message"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          width="16"
-                          height="16"
-                          color="#4CAF50"
-                          fill="none"
-                          stroke="#4CAF50"
-                          strokeWidth="1.5"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 13.3789 2.27907 14.6926 2.78382 15.8877C3.06278 16.5481 3.20226 16.8784 3.21953 17.128C3.2368 17.3776 3.16334 17.6521 3.01642 18.2012L2 22L5.79877 20.9836C6.34788 20.8367 6.62244 20.7632 6.87202 20.7805C7.12161 20.7977 7.45185 20.9372 8.11235 21.2162C9.30745 21.7209 10.6211 22 12 22Z" />
-                          <path d="M8.58815 12.3773L9.45909 11.2956C9.82616 10.8397 10.2799 10.4153 10.3155 9.80826C10.3244 9.65494 10.2166 8.96657 10.0008 7.58986C9.91601 7.04881 9.41086 7 8.97332 7C8.40314 7 8.11805 7 7.83495 7.12931C7.47714 7.29275 7.10979 7.75231 7.02917 8.13733C6.96539 8.44196 7.01279 8.65187 7.10759 9.07169C7.51023 10.8548 8.45481 12.6158 9.91948 14.0805C11.3842 15.5452 13.1452 16.4898 14.9283 16.8924C15.3481 16.9872 15.558 17.0346 15.8627 16.9708C16.2477 16.8902 16.7072 16.5229 16.8707 16.165C17 15.8819 17 15.5969 17 15.0267C17 14.5891 16.9512 14.084 16.4101 13.9992C15.0334 13.7834 14.3451 13.6756 14.1917 13.6845C13.5847 13.7201 13.1603 14.1738 12.7044 14.5409L11.6227 15.4118" />
-                        </svg>
-                      </a>
-                    )}
-                  </div>
-                </td>
-
-                <td className="p-3 text-gray-600 align-top">
-                  <span className="inline-flex items-center px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full">
-                    {item.qualification || '-'}
-                  </span>
-                </td>
-                <td className="p-3 text-gray-600 align-top">{item.yearOfPassing || '-'}</td>
-                <td className="p-3 text-gray-600 align-top">
-                  <div className="flex items-center gap-1">
-                    <MapPin size={12} className="text-gray-400" />
-                    {item.currentCity || '-'}
-                  </div>
-                </td>
-
-                <td className="p-3 align-top">
-                  {item.jobTags?.length ? (
-                    <div className="flex flex-wrap gap-1.5">
-                      {item.jobTags.map((tag, i) => (
-                        <span
-                          key={i}
-                          className="inline-flex items-center px-2.5 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full border border-blue-200"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    '-'
-                  )}
-                </td>
-
-                <td className="p-3 align-top">
-                  <button
-                    onClick={() => handleStatusClick(item)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 text-xs font-semibold rounded-full border border-blue-200 hover:shadow-md transition-all cursor-pointer"
-                    title="Change placement status"
-                  >
-                    <Briefcase size={12} />
-                    {getCleanStatus(item.placementStatus)}
-                  </button>
-                </td>
-
-                <td className="p-3 align-top">
-                  {item.resumeName ? (
-                    <button
-                      onClick={() => downloadResume(item.candidateId, item.resumeName)}
-                      className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 hover:underline transition-colors font-medium"
-                      title="Download Resume"
-                    >
-                      <Download size={14} />
-                      {item.resumeName}
-                    </button>
-                  ) : (
-                    <span className="text-gray-400">-</span>
-                  )}
-                </td>
-
-                <td className="p-3 text-gray-600 align-top">
-                  <div className="flex items-center gap-1">
-                    <Calendar size={12} className="text-gray-400" />
-                    {item.course || '-'}
-                  </div>
-                </td>
-                <td className="p-3 text-gray-600 align-top">{item.courseStartDate || '-'}</td>
-                <td className="p-3 text-gray-600 align-top">{item.courseEndDate || '-'}</td>
-                <td className="p-3 align-top">
-                  {item.batchNames ? (
-                    <div className="flex flex-wrap gap-1.5">
-                      {item.batchNames.split(',').map((batch, i) => (
-                        <span
-                          key={i}
-                          className="inline-flex items-center px-2.5 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full border border-blue-200"
-                        >
-                          {batch.trim()}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    '-'
-                  )}
-                </td>
-                <td className="p-3 text-gray-600 align-top">{item.associatedCenters || '-'}</td>
-                <td className="p-3 align-top">
-                  <span className={`inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full ${
-                    item.jobStatus === 'Active' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-gray-100 text-gray-700'
-                  }`}>
-                    {item.jobStatus || '-'}
-                  </span>
-                </td>
-                <td className="p-3 text-center text-gray-600 align-top">
-                  {item.totalExperience ? `${item.totalExperience} yrs` : '-'}
-                </td>
-                <td className="p-3 text-center text-gray-500 align-top">
-                  {item.relevantExperience ? `${item.relevantExperience} yrs` : '-'}
-                </td>
-                <td className="p-3 text-gray-600 align-top">{item.lastOrganizationName || '-'}</td>
-                <td className="p-3 text-gray-600 align-top">{item.expectedJobType || '-'}</td>
-                <td className="p-3 text-gray-600 align-top">
-                  {Array.isArray(item.expectedLocationPreference)
-                    ? item.expectedLocationPreference.join(', ')
-                    : item.expectedLocationPreference || '-'}
-                </td>
-                <td className="p-3 text-gray-600 align-top">{item.lastDesignation || '-'}</td>
-                <td className="p-3 text-gray-600 align-top">{item.expectedDesignation || '-'}</td>
-                <td className="p-3 text-center text-gray-600 align-top">
-                  {item.lastCTC ? `₹${item.lastCTC} L` : '-'}
-                </td>
-                <td className="p-3 text-center text-gray-600 align-top">
-                  {item.expectedCTC ? `₹${item.expectedCTC} L` : '-'}
-                </td>
-                <td className="p-3 text-gray-600 align-top max-w-xs">
-                  {item.remarks ? (
-                    <div className="max-w-xs">
-                      <div
-                        className={`text-sm leading-5 whitespace-pre-wrap break-words ${
-                          expandedRemarks[item.id]
-                            ? ''
-                            : 'line-clamp-2'
-                        }`}
-                      >
-                        {item.remarks}
-                      </div>
-
-                      {item.remarks.length > 100 && (
-                        <button
-                          type="button"
-                          onClick={() => toggleRemarks(item.id)}
-                          className="mt-1 text-blue-600 hover:text-blue-800 text-xs font-semibold hover:underline"
-                        >
-                          {expandedRemarks[item.id] ? 'View Less' : 'View More'}
-                        </button>
-                      )}
-                    </div>
-                  ) : (
-                    '-'
-                  )}
-                </td>
-                <td className="p-3 text-gray-600 align-top">{item.receiveJobOpportunities || '-'}</td>
-                <td className="p-3 text-gray-500 align-top text-xs">
-                  {item.updatedDate || '-'}
-                </td>
+                {visibleCols.map((col) => (
+                  <td key={col.key} className={`p-3 align-top ${col.tdClass}`}>
+                    {col.render(item)}
+                  </td>
+                ))}
               </tr>
             );
           })
