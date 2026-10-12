@@ -336,7 +336,7 @@ export default function FormBuilderPage() {
               </div>
               <div className="flex items-center justify-between p-4">
                 <div>
-                  <p className="text-sm font-medium text-[hsl(var(--foreground))]">ConceptNinjas footer</p>
+                  <p className="text-sm font-medium text-[hsl(var(--foreground))]">Leadstor footer</p>
                   <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">Shown at the bottom of the public form</p>
                 </div>
                 <button
