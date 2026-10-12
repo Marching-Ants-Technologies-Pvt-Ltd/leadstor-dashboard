@@ -1,7 +1,7 @@
 "use client";
 import { xFetch } from "@/utility/xFetch";
 import { useEffect, useState } from "react";
-import { Search, Trash2, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Trash2, Plus, ChevronLeft, ChevronRight, Link2, Code } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/ReactToastify.min.css";
 import { useRouter } from "next/navigation";
@@ -42,6 +42,17 @@ export default function MyForms() {
 
   const paginated = filtered.slice((page - 1) * limit, page * limit);
   const totalPages = Math.ceil(filtered.length / limit);
+
+  const getShareLink = (token) =>
+    `${window.location.origin}/forms/share?token=${encodeURIComponent(token)}`;
+
+  const getEmbedScript = (token) =>
+    `<script type="text/javascript" data-integrity="${token}" src="${process.env.NEXT_PUBLIC_LEADSTOR_REST}/form-widget/composer.js"></script>`;
+
+  const copyText = (text, message) => {
+    navigator.clipboard.writeText(text);
+    toast.success(message);
+  };
 
   const handleAdd = () => {
     const formTitle = prompt("Enter your form title");
@@ -115,6 +126,8 @@ export default function MyForms() {
                 <tr className="text-left">
                   <th className="p-2">Title</th>
                   <th className="p-2">Type</th>
+                  <th className="p-2 text-center">Share link</th>
+                  <th className="p-2 text-center">Embed script</th>
                   <th className="p-2 text-center">Actions</th>
                 </tr>
               </thead>
@@ -123,6 +136,16 @@ export default function MyForms() {
                   <tr key={i} className="border-t hover:bg-gray-50">
                     <td className="p-2">{row.title}</td>
                     <td className="p-2">{row.is_paid}</td>
+                    <td className="p-2 text-center">
+                      <button onClick={() => copyText(getShareLink(row.token), "Link copied")} className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800" title="Copy shareable link">
+                        <Link2 size={15} /> Copy
+                      </button>
+                    </td>
+                    <td className="p-2 text-center">
+                      <button onClick={() => copyText(getEmbedScript(row.token), "Script copied")} className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800" title="Copy embed script">
+                        <Code size={15} /> Copy
+                      </button>
+                    </td>
                     <td className="p-2 text-center space-x-2">
                       <button onClick={() => router.push(`/leads/forms/builder?token=${encodeURIComponent(row.token)}`)} className="text-blue-600 hover:text-blue-800">Edit</button>
                       <button onClick={() => router.push(`/leads/forms/preview?token=${encodeURIComponent(row.token)}`)} className="text-gray-600 hover:text-gray-800">View</button>
@@ -133,7 +156,7 @@ export default function MyForms() {
                   </tr>
                 ))}
                 {paginated.length === 0 && (
-                  <tr><td colSpan="3" className="text-center py-4 text-gray-500">No forms found</td></tr>
+                  <tr><td colSpan="5" className="text-center py-4 text-gray-500">No forms found</td></tr>
                 )}
               </tbody>
             </table>
