@@ -43,7 +43,7 @@ export default function JoineePaymentForm({ payment_id }) {
     const [hasStdFeeFromApi, setHasStdFeeFromApi] = useState(false);
     const [hasTrackingCourseOnLoad, setHasTrackingCourseOnLoad] = useState(false);
     const isEditMode = Number(payment_id) > 0;
-    const [showHistory, setShowHistory] = useState(true);
+    const [showHistory, setShowHistory] = useState(false);
 
     // Helper Functions
     const pad = (n) => String(n).padStart(2, "0");

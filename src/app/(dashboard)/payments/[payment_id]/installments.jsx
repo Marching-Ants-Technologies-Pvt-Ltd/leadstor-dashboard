@@ -52,10 +52,10 @@ export default function JoineeInstallments({
                 </div>
                 <div className='flex justify-center items-center gap-2'>
                     <button onClick={addNewInstallment} className="px-3 py-2 text-[13px] bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                        ✚ Add New
+                        ✚ 
                     </button>
                     <button onClick={onInstallmentHistory} className=" px-3 py-2 text-[13px] bg-gray-100 border border-x-gray-300 text-gray-700 rounded-md hover:bg-gray-200 font-semibold">
-                        📅 View History
+                        📅 View Timeline
                     </button>
                 </div>
             </div>

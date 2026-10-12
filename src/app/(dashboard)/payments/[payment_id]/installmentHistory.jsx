@@ -15,17 +15,27 @@ export default function InstallmentHistory({
     useEffect(() => {
         xFetch({
             path: '/services/joinees/getInstallmentTimeLine',
-            payload: { trackingId: trackingId }
-        }).then(data => {
-            setInstallments(data);
-        });
-    }, [trackingId])
+            payload: { trackingId }
+        })
+            .then(data => {
+                const parsedData = typeof data === 'string'
+                    ? JSON.parse(data)
+                    : data;
+
+                if (parsedData && typeof parsedData === 'object') {
+                    setInstallments(parsedData);
+                }
+            })
+            .catch(err => {
+                console.log('Failed to load or invalid JSON', err);
+            });
+    }, [trackingId]);
 
     return (
         <div className='absolute top-0 left-0 w-full h-full flex justify-center items-center bg-black/10'>
             <div className='max-w-[800px] bg-white rounded-md p-4 shadow-md'>
                 <div className='flex justify-between items-center border-b border-gray-200 pb-3'>
-                    <div className='font-semibold text-lg'>Installment TimeLine | History</div>
+                    <div className='font-semibold text-lg mr-8'>Installment TimeLine #{trackingId}</div>
                     <div className='flex justify-center items-center gap-4'>
                         <button onClick={() => setIncludeDeleted(prev => !prev)} className='border border-gray-200 bg-gray-50 py-1 px-4 rounded-full text-sm text-gray-500'>{includeDeleted ? 'Hide' : 'Show'} Deleted Records</button>
                         <button onClick={onClose} className='text-xs cursor-pointer'>❌</button>
