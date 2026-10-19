@@ -428,19 +428,20 @@ export default function JoineePaymentForm({ payment_id }) {
             }
         }
 
-        if (!isManualAgreedOnlyMode) {
-            const standardFee = parseFloat(payload?.stdFee);
-            if (
-                payload?.stdFee === undefined ||
-                payload?.stdFee === null ||
-                `${payload?.stdFee}`.trim() === '' ||
-                Number.isNaN(standardFee) ||
-                standardFee <= 0
-            ) {
-                toast.warning('Standard Fee cannot be 0 or blank.');
-                return;
-            }
-        }
+        // Removed as per Abhay Suggestion On Oct 19, 2026 at 05:00 PM
+        // if (!isManualAgreedOnlyMode) {
+        //     const standardFee = parseFloat(payload?.stdFee);
+        //     if (
+        //         payload?.stdFee === undefined ||
+        //         payload?.stdFee === null ||
+        //         `${payload?.stdFee}`.trim() === '' ||
+        //         Number.isNaN(standardFee) ||
+        //         standardFee <= 0
+        //     ) {
+        //         toast.warning('Standard Fee cannot be 0 or blank.');
+        //         return;
+        //     }
+        // }
 
         // Include Tracking Id
         payload['trackingId'] = payment_id;
@@ -453,6 +454,11 @@ export default function JoineePaymentForm({ payment_id }) {
             0
         );
         const totalAgreedPayment = Number(payload?.agreedPayment || 0);
+
+        if (totalAgreedPayment < 0) {
+            toast.warning('Total Agreed Payment cannot be 0 or blank.');
+            return;
+        }
 
         if (totalInstallment > totalAgreedPayment) {
             let msg = 'Total value of installments is more than Total Agreed Payment.';
