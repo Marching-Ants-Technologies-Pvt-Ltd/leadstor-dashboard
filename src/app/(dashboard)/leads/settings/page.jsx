@@ -86,7 +86,7 @@ export default function Settings() {
         key: "integrations",
         collapsible: true,
         children: [
-          { key: "facebook", label: "Facebook" },
+          { key: "facebook", label: "Facebook / Instagram" },
           { key: "justdial", label: "Justdial - Sulekha" },
           { key: "webSync", label: "WebSync" },
           { key: "IVR", label: "IVR" },
