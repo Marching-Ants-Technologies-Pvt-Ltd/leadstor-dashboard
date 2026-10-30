@@ -113,7 +113,7 @@ function FacebookAuthButton({ status, onSuccess, onLogout }) {
       onClick={handleLogin}
       disabled={loading}
     >
-      {loading ? "Connecting..." : "Continue with Facebook"}
+      {loading ? "Connecting..." : "Continue with Facebook / Instagram"}
     </button>
   );
 }
@@ -825,7 +825,7 @@ export default function FacebookLeadManager() {
       {/* Not connected message */}
       {loaded && status?.status !== "connected" && (
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
-          Please connect your Facebook account to view and manage form subscriptions.
+          Please connect your Facebook / Instagram account to view and manage form subscriptions.
         </div>
       )}
 
