@@ -344,7 +344,7 @@ export default function WhatsappConfig() {
 
               <p className="mt-1 text-sm leading-5 text-blue-800">
                 Lead creation, source assignment, and duplicate handling
-                follow LeadStor's predefined processing rules.
+                follow LeadStor&apos;s predefined processing rules.
               </p>
             </div>
           </div>
