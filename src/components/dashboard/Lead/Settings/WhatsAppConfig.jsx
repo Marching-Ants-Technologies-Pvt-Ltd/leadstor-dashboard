@@ -1,369 +1,480 @@
-"use client";
+﻿"use client";
+
 import React, { useEffect, useState } from "react";
 import { xFetch } from "@/utility/xFetch";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { Loader2, Link, Phone, Briefcase, Cloud, Send, ClipboardCopy } from "lucide-react";
-import {Corporate} from "@/utility/TinyDB";
+import {
+  CheckCircle2,
+  Copy,
+  Eye,
+  EyeOff,
+  Loader2,
+  MessageCircle,
+  ShieldCheck,
+  Webhook,
+} from "lucide-react";
+
+const initialConfig = {
+  provider: "META_CLOUD_API",
+  businessAccountId: "",
+  phoneNumberId: "",
+  providerAccountId: "",
+  apiKey: "",
+  webhookUrl: "",
+  active: false,
+  configured: false,
+  hasApiKey: false,
+};
 
 export default function WhatsappConfig() {
+  const [config, setConfig] = useState(initialConfig);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [viewLogs, setViewLogs] = useState(false);
-  const [logs, setLogs] = useState([]);
+  const [showToken, setShowToken] = useState(false);
 
-  const [form, setForm] = useState({
-    token: "",
-    phoneId: "",
-    businessId: "",
-    webhookUrl: "",
-    webhookToken: "",
-    callbackActive: false,
-    method: "insert",
-  });
+  const isMeta = config.provider === "META_CLOUD_API";
 
   useEffect(() => {
     loadConfig();
   }, []);
 
-  async function loadConfig() {
-    try {
-      const res = await xFetch({
-            path: "/services/profile/getWhatsAppConfig"
-        });
+  const loadConfig = async () => {
+    setLoading(true);
 
-      if (!res?.status) {
-        toast.error("Failed loading data!");
+    try {
+      const response = await xFetch({
+        path: "/services/profile/getIncomingWhatsAppConfig",
+        method: "GET",
+      });
+
+      if (!response?.status) {
+        toast.error(
+          response?.desc || "Unable to load WhatsApp configuration."
+        );
         return;
       }
 
-      setForm({
-        token: res.token ?? "",
-        phoneId: res.phoneNumberId ?? "",
-        businessId: res.businessId ?? "",
-        webhookUrl: `${window.location.protocol}//${window.location.host}/services/callback/whatsappCallback.php`,
-        webhookToken: res.webhookToken,
-        callbackActive: res.callbackActive == 1,
-        method: res.method,
+      setConfig({
+        ...initialConfig,
+        ...response.config,
+        apiKey: "",
       });
-    } catch (err) {
-      console.log(err);
-      toast.error("Something went wrong!");
+    } catch (error) {
+      console.error("Load WhatsApp configuration:", error);
+      toast.error("Unable to load WhatsApp configuration.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }
+  };
 
-  function onChange(e) {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  }
+  const updateField = (event) => {
+    const { name, value } = event.target;
 
-    async function saveWpCloudAPICred(e) {
-        let wpAPI_Method =  form.method;
-        if (saving) {
-            alert("Please wait.... We are processing your previous request.");
-            return;
-        }
+    setConfig((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
+  };
 
-        const token = form.token?.trim();
-        const phoneId = form.phoneId?.trim();
-        const businessId = form.businessId?.trim();
-
-        // Validations
-        if (!token) {
-            return toast.error("Kindly provide the Whatsapp Cloud API access token." );
-        }
-        if (!phoneId) {
-            return toast.error("Kindly provide the Whatsapp Cloud API phone number Id.");
-        }
-        if (!businessId) {
-            return toast.error("Kindly provide the Whatsapp Cloud API business account Id.");
-        }
-
-        setSaving(true);
-
-        // UI loader text (same as e.value = "Saving...")
-        const oldValue = e.target.innerText;
-        e.target.innerText = "Saving...";
-
-        const formData = new FormData();
-        formData.append("corporateId", Corporate?._id);
-        formData.append("token", token);
-        formData.append("phoneId", phoneId);
-        formData.append("businessId", businessId);
-
-        xFetch({
-            path: `/services/widget/${wpAPI_Method}WhatsAppCloudAPI/`,
-            method: "POST",
-            payload: formData,
-            isFormData: true
-        })
-        .then((json) => {
-            console.log(json);
-
-            e.target.innerText = oldValue;
-            if (json?.status) {
-                wpAPI_Method = "update";
-                toast.success(json.desc);
-            } else {
-                toast.error(json?.desc || "Error occurred");
-            }
-        })
-        .catch((err) => {
-            console.error(err);
-            e.target.innerText = oldValue;
-            toast.error("Something went wrong!");
-        })
-        .finally(() => {
-            setSaving(false);
-        });
+  const copyToClipboard = async (value, label) => {
+    if (!value) {
+      toast.error(`${label} is not available.`);
+      return;
     }
 
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success(`${label} copied.`);
+    } catch (error) {
+      toast.error(`Unable to copy ${label.toLowerCase()}.`);
+    }
+  };
 
-    async function testWhatsapp() {
-        if (testing) return;
+  const saveConfig = async (event) => {
+    event.preventDefault();
 
-        if (form.testNumber?.length < 10) {
-            toast.error("Enter valid WhatsApp number!");
-            return;
-        }
+    if (saving) return;
 
-        setTesting(true);
-
-        try {
-            const fd = new FormData();
-            fd.append("corporateId", Corporate?._id);
-            fd.append("targetNumber", form.testNumber);
-
-            const res = await xFetch({
-            path: "/services/widget/testWpCloudAPI/",
-            method: "POST",
-            payload: fd,
-            isFormData: true
-            });
-
-            if (res.message_id) {
-                toast.success("Message sent successfully!");
-            } else {
-                toast.error(res.status || "Failed sending message");
-            }
-
-        } catch (err) {
-            toast.error("Error testing!");
-        }
-
-        setTesting(false);
+    if (isMeta) {
+      if (
+        !config.businessAccountId.trim() ||
+        !config.phoneNumberId.trim()
+      ) {
+        toast.error(
+          "Business Account ID and Phone Number ID are required."
+        );
+        return;
+      }
+    } else if (!config.providerAccountId.trim()) {
+      toast.error("WATI account/channel identifier is required.");
+      return;
     }
 
-    async function fetchLogs() {
-        setViewLogs(true);
-
-        try {
-            const fd = new FormData();
-            fd.append("corporateId", Corporate?._id);
-
-            const res = await xFetch({
-            path: "/services/widget/logsWpCloudAPI/",
-            method: "POST",
-            payload: fd,
-            isFormData: true
-            });
-
-            if (res.status) {
-            setLogs(res.rows);
-            } else {
-            toast.error("No logs found");
-            }
-
-        } catch (err) {
-            toast.error("Cannot load logs");
-        }
+    if (!config.hasApiKey && !config.apiKey.trim()) {
+      toast.error("Please enter your provider API token.");
+      return;
     }
 
-  if (loading)
+    setSaving(true);
+
+    try {
+      const payload = new FormData();
+
+      payload.append("provider", config.provider);
+      payload.append(
+        "businessAccountId",
+        config.businessAccountId.trim()
+      );
+      payload.append("phoneNumberId", config.phoneNumberId.trim());
+      payload.append(
+        "providerAccountId",
+        config.providerAccountId.trim()
+      );
+      payload.append("apiKey", config.apiKey.trim());
+      payload.append("active", config.active ? "1" : "0");
+
+      const response = await xFetch({
+        path: "/services/profile/saveIncomingWhatsAppConfig",
+        method: "POST",
+        payload,
+        isFormData: true,
+      });
+
+      if (!response?.status) {
+        toast.error(
+          response?.desc || "Unable to save WhatsApp connection."
+        );
+        return;
+      }
+
+      toast.success("WhatsApp connection saved successfully.");
+
+      await loadConfig();
+    } catch (error) {
+      console.error("Save WhatsApp configuration:", error);
+      toast.error("Unable to save WhatsApp connection.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="p-10 text-center text-gray-500">
-        <Loader2 className="animate-spin w-6 h-6 mx-auto" />
+      <div className="flex min-h-72 items-center justify-center gap-3">
+        <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+        <span className="text-sm text-gray-600">
+          Loading WhatsApp settings...
+        </span>
       </div>
     );
+  }
 
   return (
-    <div className="w-full max-w-5xl mx-auto py-10">
-      <ToastContainer />
-      
-      {!viewLogs && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+    <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
+      <ToastContainer position="top-right" autoClose={3000} />
 
-          {/* Left Info Section */}
-          <div>
-            <img src="/assets/img/wpninjas.jpg" alt="" className="w-56 mb-4" />
-            <h2 className="text-xl font-semibold mb-4">WhatsApp Cloud API - Business</h2>
+      {/* Page Header */}
+      <section className="overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-50 via-white to-cyan-50 p-6">
+        <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
+          <div className="flex items-start gap-4">
+            <div className="rounded-xl bg-emerald-100 p-3 text-emerald-700">
+              <MessageCircle className="h-7 w-7" />
+            </div>
 
-            <ul className="space-y-2 text-blue-600 underline">
-              <li><a href="#" target="_blank">Get credentials</a></li>
-              <li><a href="#" target="_blank">Connect Webhook</a></li>
-              <li><a href="#" target="_blank">Watch integration tutorial</a></li>
-              <li><a href="#" target="_blank">View integration docs</a></li>
-            </ul>
+            <div>
+              <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-800">
+                WhatsApp Integration
+              </span>
+
+              <h1 className="mt-3 text-2xl font-semibold tracking-tight text-gray-900">
+                Connect WhatsApp to LeadStor
+              </h1>
+
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600">
+                Connect your WhatsApp Business account to receive incoming
+                messages and process leads automatically in LeadStor.
+              </p>
+            </div>
           </div>
 
-          {/* Right Form */}
-          <div className="col-span-2 bg-white rounded-xl shadow p-6 space-y-5">
+          <div className="min-w-44 rounded-xl border border-white bg-white/90 p-4 shadow-sm">
+            <p className="text-xs text-gray-500">
+              Integration status
+            </p>
 
-            {/* Token */}
-            <InputField
-              label="Access Token"
-              icon={<Cloud size={18} />}
-              value={form.token}
-              name="token"
-              onChange={onChange}
-              placeholder="Access Token"
-            />
-
-            {/* Phone ID */}
-            <InputField
-              label="Phone Number ID"
-              icon={<Phone size={18} />}
-              value={form.phoneId}
-              name="phoneId"
-              onChange={onChange}
-              placeholder="Phone Number ID"
-            />
-
-            {/* Business ID */}
-            <InputField
-              label="Business Account ID"
-              icon={<Briefcase size={18} />}
-              value={form.businessId}
-              name="businessId"
-              onChange={onChange}
-              placeholder="Business Account ID"
-            />
-
-            {/* Webhook (Read-Only) */}
-            {!form.callbackActive && (
-              <>
-                <InputField
-                  label="Webhook URL"
-                  icon={<Link size={18} />}
-                  value={form.webhookUrl}
-                  name="webhookUrl"
-                  readOnly
-                />
-
-                <InputField
-                  label="Webhook Token"
-                  icon={<ClipboardCopy size={18} />}
-                  value={form.webhookToken}
-                  name="webhookToken"
-                  readOnly
-                />
-              </>
-            )}
-
-            {/* Test Number */}
-            {form.callbackActive && (
-              <InputField
-                label="WhatsApp Number for Testing"
-                icon={<Send size={18} />}
-                value={form.testNumber}
-                name="testNumber"
-                onChange={onChange}
-                placeholder="9179XXXXXX96"
+            <div className="mt-2 flex items-center gap-2">
+              <span
+                className={`h-2.5 w-2.5 rounded-full ${
+                  config.active
+                    ? "bg-emerald-500"
+                    : "bg-amber-500"
+                }`}
               />
-            )}
 
-            {/* Buttons */}
-            <div className="flex gap-4 pt-4">
-              <button
-                className="px-6 py-2 rounded bg-blue-600 text-white shadow hover:bg-blue-700"
-                onClick={saveWpCloudAPICred}
-              >
-                {saving ? "Saving..." : "Save"}
-              </button>
-
-              {form.callbackActive && (
-                <>
-                  <button
-                    className="px-6 py-2 rounded bg-yellow-500 text-white shadow hover:bg-yellow-600"
-                    onClick={testWhatsapp}
-                  >
-                    {testing ? "Testing..." : "Test"}
-                  </button>
-
-                  <button
-                    className="px-6 py-2 rounded bg-indigo-500 text-white shadow hover:bg-indigo-600"
-                    onClick={fetchLogs}
-                  >
-                    View Logs
-                  </button>
-                </>
-              )}
+              <span className="text-sm font-semibold text-gray-900">
+                {config.active ? "Enabled" : "Not enabled"}
+              </span>
             </div>
           </div>
         </div>
-      )}
+      </section>
 
-      {/* Logs Section */}
-      {viewLogs && (
-        <div className="bg-white shadow p-6 rounded-xl">
-          <h2 className="text-xl font-semibold mb-4">Logs (Last 10 Messages)</h2>
+      <form onSubmit={saveConfig} className="space-y-6">
+        {/* Connection Settings */}
+        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm md:p-6">
+          <div className="mb-6 flex items-start gap-3">
+            <div className="rounded-lg bg-gray-900 p-2.5 text-white">
+              <MessageCircle className="h-5 w-5" />
+            </div>
 
-          <table className="w-full border">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="p-2">Date</th>
-                <th className="p-2">WhatsApp Number</th>
-                <th className="p-2">Status</th>
-                <th className="p-2">Template</th>
-                <th className="p-2">Remarks</th>
-              </tr>
-            </thead>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">
+                WhatsApp Connection
+              </h2>
 
-            <tbody>
-              {logs.length === 0 && (
-                <tr>
-                  <td colSpan="5" className="p-4 text-center text-gray-500">
-                    No Logs Found
-                  </td>
-                </tr>
+              <p className="mt-1 text-sm text-gray-500">
+                Select your provider and enter the required account details.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            {/* Provider */}
+            <Field label="WhatsApp Provider" required>
+              <select
+                name="provider"
+                value={config.provider}
+                onChange={updateField}
+                className="field"
+              >
+                <option value="META_CLOUD_API">
+                  Meta WhatsApp Cloud API
+                </option>
+                <option value="WATI">WATI</option>
+              </select>
+            </Field>
+
+            {isMeta ? (
+              <>
+                <Field label="Business Account ID" required>
+                  <input
+                    name="businessAccountId"
+                    value={config.businessAccountId}
+                    onChange={updateField}
+                    placeholder="Enter Meta Business Account ID"
+                    className="field"
+                  />
+                </Field>
+
+                <Field label="Phone Number ID" required>
+                  <input
+                    name="phoneNumberId"
+                    value={config.phoneNumberId}
+                    onChange={updateField}
+                    placeholder="Enter WhatsApp Phone Number ID"
+                    className="field"
+                  />
+                </Field>
+              </>
+            ) : (
+              <Field label="WATI Account / Channel ID" required>
+                <input
+                  name="providerAccountId"
+                  value={config.providerAccountId}
+                  onChange={updateField}
+                  placeholder="Enter the identifier used by your WATI integration"
+                  className="field"
+                />
+              </Field>
+            )}
+
+            {/* Provider Token */}
+            <Field
+              label={isMeta ? "Access Token" : "WATI API Token"}
+              required={!config.hasApiKey}
+            >
+              <div className="relative">
+                <input
+                  type={showToken ? "text" : "password"}
+                  name="apiKey"
+                  value={config.apiKey}
+                  onChange={updateField}
+                  placeholder={
+                    config.hasApiKey
+                      ? "Saved securely — enter only to replace"
+                      : "Enter provider API token"
+                  }
+                  autoComplete="new-password"
+                  className="field pr-12"
+                />
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowToken((previous) => !previous)
+                  }
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-800"
+                  aria-label={showToken ? "Hide token" : "Show token"}
+                >
+                  {showToken ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+
+              {config.hasApiKey && (
+                <p className="mt-1.5 text-xs text-emerald-700">
+                  A token is already saved. Leave this field empty to
+                  retain it.
+                </p>
               )}
+            </Field>
+          </div>
 
-              {logs.map((row, i) => (
-                <tr key={i} className="border-b">
-                  <td className="p-2">{row.created_datetime}</td>
-                  <td className="p-2">{row.mobile}</td>
-                  <td className="p-2 capitalize">{row.message_status || "Sent"}</td>
-                  <td className="p-2">{row.source}</td>
-                  <td className="p-2">{row.data_response ?? "-"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="mt-6 flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4">
+            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-blue-700" />
 
-          <button
-            className="mt-4 px-6 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-            onClick={() => setViewLogs(false)}
-          >
-            Close
-          </button>
-        </div>
-      )}
+            <div>
+              <p className="text-sm font-medium text-blue-900">
+                Managed by LeadStor
+              </p>
+
+              <p className="mt-1 text-sm leading-5 text-blue-800">
+                Lead creation, source assignment, and duplicate handling
+                follow LeadStor's predefined processing rules.
+              </p>
+            </div>
+          </div>
+
+          {/* Activation */}
+          <div className="mt-5 flex items-center justify-between rounded-xl border border-gray-200 p-4">
+            <div>
+              <p className="text-sm font-medium text-gray-900">
+                Enable WhatsApp integration
+              </p>
+
+              <p className="mt-1 text-xs text-gray-500">
+                Turn this off to stop processing messages for this integration.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              role="switch"
+              aria-checked={config.active}
+              onClick={() =>
+                setConfig((previous) => ({
+                  ...previous,
+                  active: !previous.active,
+                }))
+              }
+              className={`relative h-6 w-11 rounded-full transition ${
+                config.active ? "bg-emerald-600" : "bg-gray-300"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${
+                  config.active ? "left-5.5" : "left-0.5"
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4" />
+              )}
+              {saving ? "Saving..." : "Save Connection"}
+            </button>
+          </div>
+        </section>
+
+        {/* Webhook */}
+        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm md:p-6">
+          <div className="flex items-start gap-3">
+            <div className="rounded-lg bg-gray-900 p-2.5 text-white">
+              <Webhook className="h-5 w-5" />
+            </div>
+
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Webhook Configuration
+              </h2>
+
+              <p className="mt-1 text-sm text-gray-500">
+                Configure your provider to send incoming WhatsApp messages
+                to LeadStor.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <Field label="Webhook URL">
+              <div className="flex gap-2">
+                <textarea
+                  value={config.webhookUrl || ""}
+                  readOnly
+                  placeholder="Webhook URL will appear here"
+                  rows={3}
+                  className="field min-h-[88px] resize-none font-mono text-sm leading-6"
+                />
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    copyToClipboard(config.webhookUrl, "Webhook URL")
+                  }
+                  disabled={!config.webhookUrl}
+                  className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Copy className="h-4 w-4" />
+                  Copy
+                </button>
+              </div>
+            </Field>
+          </div>
+
+          <div className="mt-5 flex items-start gap-3 rounded-xl bg-gray-50 p-4">
+            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-gray-600" />
+
+            <div>
+              <p className="text-sm font-medium text-gray-800">
+                One-time setup
+              </p>
+
+              <p className="mt-1 text-sm leading-5 text-gray-600">
+                Configure the webhook and message subscription in your
+                provider account. Saving this connection does not
+                automatically register the webhook with Meta or WATI.
+              </p>
+            </div>
+          </div>
+
+        </section>
+      </form>
     </div>
   );
 }
 
-function InputField({ label, icon, ...props }) {
+function Field({ label, required = false, children }) {
   return (
-    <div className="space-y-1">
-      <label className="font-medium text-sm">{label}</label>
-      <div className="flex items-center border rounded px-3 py-2 bg-gray-50">
-        {icon}
-        <input
-          {...props}
-          className="w-full bg-transparent outline-none ml-2"
-        />
-      </div>
+    <div className="min-w-0 space-y-2">
+      <label className="block text-sm font-medium text-gray-700">
+        {label}
+        {required && <span className="ml-1 text-red-500">*</span>}
+      </label>
+
+      {children}
     </div>
   );
 }
