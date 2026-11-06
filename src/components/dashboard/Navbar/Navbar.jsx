@@ -34,7 +34,8 @@ export default function Navbar({ collapsed, setCollapsed, data }) {
     '/expenses': 'Expenses',
     '/businessProfile': 'Business Profile',
     '/teams': 'Teams',
-    '/analytics/classic-analytics': 'Analytics',
+    '/analytics': 'Analytics',
+    '/analytics/classic-analytics': 'Classic Analytics',
     '/': 'Dashboard',
     '/change-password': 'Change Password',
   };
@@ -90,16 +91,36 @@ export default function Navbar({ collapsed, setCollapsed, data }) {
       <div className="flex items-center gap-3">
       
         
-      {/* Analytics Hover Dropdown */}
+      {/* Analytics Dropdown */}
       {( userRoles.includes("Admin") || userRoles.includes("Administrator") || userRoles.includes("Super Counsellor")) && (
       
-        <div className="relative group">
-          <button className="nav-icon analytics-button" title='Analytics'>
-            <Link
-                href="/analytics/classic-analytics"
-              ><i className="ri-pie-chart-line"></i>
-            </Link>
+        <div className="relative" ref={dropdownRef}>
+          <button
+            className="nav-icon analytics-button"
+            title="Analytics"
+            onClick={() => setOpenAnalytics(v => !v)}
+            aria-haspopup="true"
+            aria-expanded={openAnalytics}
+          >
+            <i className="ri-pie-chart-line"></i>
           </button>
+
+          {openAnalytics && (
+            <div className="dropdown-panel" role="menu">
+              <Link href="/analytics" onClick={() => setOpenAnalytics(false)}>
+                <div className="dropdown-row">
+                  <i className="ri-bar-chart-2-line text-blue-500 text-lg"></i>
+                  <span>Analytics</span>
+                </div>
+              </Link>
+              <Link href="/analytics/classic-analytics" onClick={() => setOpenAnalytics(false)}>
+                <div className="dropdown-row">
+                  <i className="ri-history-line text-slate-500 text-lg"></i>
+                  <span>Classic Analytics</span>
+                </div>
+              </Link>
+            </div>
+          )}
         </div>
       )}
 

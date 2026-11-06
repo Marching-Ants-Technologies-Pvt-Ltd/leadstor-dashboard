@@ -25,6 +25,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
   const [validationErrors, setValidationErrors] = useState({});
   const [aiNextStep, setAiNextStep] = useState("");
   const isCorporate800 = Corporate?.type === 800;
+  const isCorporate658 = String(Corporate?._id ?? "") === "658";
   const courseLabel = isCorporate800 ? 'Country' : 'Course';
 
   const FIELD_GROUPS = {
@@ -216,10 +217,12 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
     }
 
     if (item.fieldType === "textarea") {
+      const isRemarksRequired = isCorporate658 && item.dataField === "remarks";
       return (
         <div key={index} className="field-card">
           <label className="label-crm">
             {label}
+            {isRemarksRequired && <span className="required-dot"> *</span>}
           </label>
           <textarea
             rows="3"
@@ -304,6 +307,13 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
       if (key === "remarks") {
         return String(fields[key] || "").trim() !== "";
       }
+      return fields[key] !== originalFields[key];
+    });
+  };
+
+  const hasNonRemarkChanges = () => {
+    return Object.keys(fields).some((key) => {
+      if (key === "remarks") return false;
       return fields[key] !== originalFields[key];
     });
   };
@@ -394,6 +404,12 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
     const remarksValue = String(fields.remarks || "").trim();
     const courseValue = String(fields.course || originalFields.course || "").trim();
     setValidationErrors({});
+
+    if (isCorporate658 && hasNonRemarkChanges() && !remarksValue) {
+      setValidationErrors({ remarks: true });
+      toast.error("Please add a remark");
+      return;
+    }
 
     setLoading(true);
     try {

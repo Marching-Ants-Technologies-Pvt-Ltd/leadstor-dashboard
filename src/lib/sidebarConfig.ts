@@ -7,6 +7,12 @@ export const menuItems = [
     allowedRoles: ['Admin', 'Administrator', 'Super Counsellor', 'Counsellor', 'Telecaller', 'Read Only Super User'],
   },
   {
+    icon: 'ri-pie-chart-line',
+    label: 'Analytics',
+    href: '/analytics',
+    allowedRoles: ['Admin', 'Administrator', 'Super Counsellor'],
+  },
+  {
     icon: 'ri-bank-card-line',
     label: 'Payments',
     href: '/payments',
