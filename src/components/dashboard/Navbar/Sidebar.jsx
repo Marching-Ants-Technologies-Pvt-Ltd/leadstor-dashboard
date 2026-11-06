@@ -3,16 +3,37 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import '@cttricks/spotlight/styles';
 import { menuItems } from '@/lib/sidebarConfig'; // adjust path
-
-import { useTour } from '@reactour/tour'
-import { getTourSteps } from '@/data/tour'
-
 
 export default function Sidebar({ collapsed, setCollapsed, userRole }) {
   const pathname = usePathname();
-  const { isOpen, currentStep, steps, setIsOpen, setCurrentStep, setSteps } = useTour()
+
+  const spotRef = useRef(null);
+
+  // Clean up any Spotlight instance when the sidebar unmounts
+  useEffect(() => {
+    return () => spotRef.current?.destroy();
+  }, []);
+
+  const startSpotlightTour = async () => {
+    try {
+      spotRef.current?.destroy();
+      const pageGroup = pathname.split('/')[1]; // '/payments' -> 'payments'
+      const hasPageSteps = document.querySelector(`[data-spot-group="${pageGroup}"]`);
+
+      const { spotlight } = await import('@cttricks/spotlight');
+      const tour = await spotlight({
+        theme: 'light',
+        group: hasPageSteps ? pageGroup : 'default',
+      });
+      spotRef.current = tour;
+      tour.start();
+    } catch (err) {
+      console.error('Spotlight failed:', err);
+    }
+  };
 
   const isActive = (href) =>
     pathname === href || pathname.startsWith(`${href}/`);
@@ -96,14 +117,10 @@ export default function Sidebar({ collapsed, setCollapsed, userRole }) {
 
       <div className='py-4 px-2'>
 
-        <button onClick={() => {
-          const tour = getTourSteps(pathname);
-
-          setSteps(tour);
-          setCurrentStep(0);
-          setIsOpen(true);
-
-        }} className='text-slate-600 rounded-md hover:bg-blue-50 hover:text-blue-600 group h-10 flex items-center gap-2 px-4 text-sm cursor-pointer transition w-full'>
+        <button
+          onClick={startSpotlightTour}
+          className='text-slate-600 rounded-md hover:bg-blue-50 hover:text-blue-600 group h-10 flex items-center gap-2 px-4 text-sm cursor-pointer transition w-full'
+        >
           <i className="ri-slideshow-3-line text-[19px]"></i>
           {!collapsed && (
             <span className='font-semibold'>Take a tour</span>
