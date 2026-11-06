@@ -18,7 +18,7 @@ import {
 import { xFetch } from "@/utility/xFetch";
 import UpdateLead from "@/components/dashboard/Lead/UpdateLead";
 
-const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
+const Timeline = ({ leadDetails, isOpen, onClose, xLeads, canEdit = true }) => {
   const [timelineData, setTimelineData] = useState([]);
   const [showUpdatePopup, setShowUpdatePopup] = useState(false);
   const [owner, setOwner] = useState([]);
@@ -486,13 +486,15 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
             >
               {copied ? <CheckCircle2 size={16} className="text-green-600" /> : <Copy size={16} />}
             </button>
-            <button
-              onClick={handleEditClick}
-              title="Edit Lead"
-              className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
-            >
-              <Pencil size={16} />
-            </button>
+            {canEdit && (
+              <button
+                onClick={handleEditClick}
+                title="Edit Lead"
+                className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
+              >
+                <Pencil size={16} />
+              </button>
+            )}
           </div>
         </div>
       </Modal>

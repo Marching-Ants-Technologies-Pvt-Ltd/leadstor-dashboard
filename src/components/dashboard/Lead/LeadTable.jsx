@@ -125,8 +125,13 @@ export default function LeadsTable({
     const userRoles = Array.isArray(User.role) 
     ? User.role.map(r => String(r).trim())
     : [String(User.role).trim()];
+
     const ADMIN_ROLES = ['administrator', 'admin'];
     const isAdmin = userRoles.some(r => ADMIN_ROLES.includes(r.toLowerCase().trim()));
+    
+    const STRICT_JOINED_LOCK_CORPORATE_IDS = [658];
+    const isStrictAdmin = userRoles.some(r => r.toLowerCase().trim() === 'admin');
+    const isStrictLockCorporate = STRICT_JOINED_LOCK_CORPORATE_IDS.includes(Number(Corporate?._id));
 
     const syncSavedLeadView = () => {
         const savedView = LeadSavedView.value();
@@ -151,6 +156,10 @@ export default function LeadsTable({
         return [];
     };
     const isReadOnlySuperUser = userRoles.includes("Read Only Super User");
+
+    const canEditLeadRow = (lead) =>
+        !isReadOnlySuperUser &&
+        (lead?.status !== 'Joined' || (isStrictLockCorporate ? isStrictAdmin : isAdmin));
 
     const syncSavedLeadViewOLD = () => {
         const savedView = LeadSavedView.value();
@@ -420,7 +429,7 @@ export default function LeadsTable({
        NAME + BOOKMARK
     ======================= */
     const renderNameCell = (row) => {
-        const canEditLead = !isReadOnlySuperUser && (isAdmin || row.status !== 'Joined');
+        const canEditLead = canEditLeadRow(row);        
         return (
             <div className="flex items-center gap-2">
                 <span className="font-medium text-slate-800">{`${row.firstName} ${row.lastName}`}
@@ -1666,6 +1675,7 @@ export default function LeadsTable({
         {showTimeline && selectedLeadForTimeline && (
             <Timeline
             leadDetails={selectedLeadForTimeline}
+            canEdit={canEditLeadRow(selectedLeadForTimeline)}
             isOpen={showTimeline}
             onClose={() => setShowTimeline(false)}
             xLeads={refreshLeads}
