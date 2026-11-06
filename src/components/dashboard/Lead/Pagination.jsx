@@ -119,7 +119,14 @@ export default function LeadsTablePagination({ columns, setColumns, columnOrder,
             {!isMobile && (
                 <>
                     <div className="flex items-center gap-6 text-sm text-slate-600">
-                        <div className='border-r pr-4 flex justify-center items-center leads-enquiries-count'>
+                        <div
+                            className='border-r pr-4 flex justify-center items-center leads-enquiries-count'
+                            data-spot-id="count"
+                            data-spot-group="leads"
+                            data-spot-name="Enquiries On This Page"
+                            data-spot-summary="View the number of enquiries currently displayed on this page along with the total number of leads."
+                            data-spot-position="top"
+                        >                            
                             {isLoading && (
                             <div className="spinner-simple w-5 h-5 mr-2 border-[2px]" />
                             )}
@@ -133,8 +140,14 @@ export default function LeadsTablePagination({ columns, setColumns, columnOrder,
                                         tabIndex={0}
                                     >
                                         Enquiries per page
-                                        <div className="relative ml-2 leads-page-size-btn">
-                                            <span
+                                        <div
+                                            className="relative ml-2 leads-page-size-btn"
+                                            data-spot-id="page-size"
+                                            data-spot-group="leads"
+                                            data-spot-name="Enquiries Per Page"
+                                            data-spot-summary="Adjust the number of enquiries shown per page. The default is 50."
+                                            data-spot-position="top"
+                                        >                                            <span
                                                 className='group border px-3 rounded-md py-0.5 cursor-pointer bg-white hover:bg-gray-50 transition-colors'
                                                 onClick={() => setShowPerPageDropdown(open => !open)}
                                                 tabIndex={0}
@@ -184,12 +197,27 @@ export default function LeadsTablePagination({ columns, setColumns, columnOrder,
                             {/* Scrollbars and fullscreen buttons only on desktop */}
                             <div className="flex items-center text-gray-500 pt-1 justify-center cursor-pointer">
                                 <span className="tooltip tooltip-top" data-tooltip="View Fullscreen">
-                                    <button onClick={fullScreenSwitch} className="ri-fullscreen-line text-lg ml-2 leads-fullscreen-btn"></button>
-                                </span>
+                                    <button
+                                        onClick={fullScreenSwitch}
+                                        className="ri-fullscreen-line text-lg ml-2 leads-fullscreen-btn"
+                                        data-spot-id="fullscreen"
+                                        data-spot-group="leads"
+                                        data-spot-name="Go Full Screen"
+                                        data-spot-summary="Use this button to hide unnecessary elements and view the leads table in full-screen mode."
+                                        data-spot-position="top"
+                                    ></button>                                </span>
                             </div>
                         </div>
                     </div>
-                    <div className='pagination ml-6 flex items-center gap-x-2 leads-pagination' onClick={handelPageChange}>
+                    <div
+                        className='pagination ml-6 flex items-center gap-x-2 leads-pagination'
+                        data-spot-id="pagination"
+                        data-spot-group="leads"
+                        data-spot-name="Jump to Pages"
+                        data-spot-summary="Use these page buttons to quickly navigate between different pages of leads."
+                        data-spot-position="top"
+                        onClick={handelPageChange}
+                    >                        
                         {downloadNotification?.hasActiveDownload && (
                             <button
                                 onClick={e => { 

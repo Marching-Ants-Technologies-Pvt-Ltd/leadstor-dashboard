@@ -347,7 +347,14 @@ export default function LeadsMenu({
       <div className="bg-white border-b px-4 py-3 flex justify-between items-center">
         {/* SEARCH */}
 
-        <div className="relative w-80 leads-search-bar">
+        <div
+          className="relative w-80 leads-search-bar"
+          data-spot-id="search"
+          data-spot-group="leads"
+          data-spot-name="Search Leads"
+          data-spot-summary="Use this searchbar to find leads by name, email and phone number."
+          data-spot-position="bottom"
+        >
           <input
             type="text"
             placeholder="Search by name, email, mobile..."
@@ -392,8 +399,16 @@ export default function LeadsMenu({
           {/* Show only Filter menu for Counsellor role */}
 
               {!userRoles.includes("Read Only Super User") && (
-                <button onClick={handleAddLead} className="btn-primary-crm action-chip leads-add-btn">
-                  <i className="ri-user-add-line" />
+                <button
+                  onClick={handleAddLead}
+                  className="btn-primary-crm action-chip leads-add-btn"
+                  data-spot-id="add"
+                  data-spot-group="leads"
+                  data-spot-name="Add New Lead"
+                  data-spot-summary="Use this button to manually add a new lead in your collection."
+                  data-spot-position="bottom"
+                >                  
+                <i className="ri-user-add-line" />
                   Add
                 </button>
               )}
@@ -406,6 +421,11 @@ export default function LeadsMenu({
                       setOpenMenu(openMenu === 'ai' ? null : 'ai');
                     }}
                     className="action-chip leads-ai-sales-insight-btn"
+                    data-spot-id="ai-insight"
+                    data-spot-group="leads"
+                    data-spot-name="AI Sales Insight"
+                    data-spot-summary="Use this button to get AI-powered insights and recommendations about your leads."
+                    data-spot-position="bottom"
                     title="AI performance audit"
                   >
                     <span className="sparkle">✨</span>
@@ -438,6 +458,11 @@ export default function LeadsMenu({
                 <div className="relative">
                   <button
                     className="action-chip leads-export-btn"
+                    data-spot-id="export"
+                    data-spot-group="leads"
+                    data-spot-name="Export"
+                    data-spot-summary="Use this dropdown to download lead data as an Excel file. Choose from Daily Report or Enquiries Export."
+                    data-spot-position="bottom"
                     onClick={(e) => {
                       e.stopPropagation();
                       setOpenMenu(openMenu === 'export' ? null : 'export');
@@ -471,6 +496,11 @@ export default function LeadsMenu({
               <div className="relative">
                 <button
                   className="action-chip leads-filter-btn"
+                  data-spot-id="filter"
+                  data-spot-group="leads"
+                  data-spot-name="Filter"
+                  data-spot-summary="Use this dropdown to filter leads using quick filters or advanced filter options."
+                  data-spot-position="bottom"
                   onClick={(e) => {
                     e.stopPropagation();
                     setOpenMenu(openMenu === 'filter' ? null : 'filter');
@@ -557,13 +587,26 @@ export default function LeadsMenu({
               )}
 
               {canViewLeadSettings && (
-                <button className="icon-btn leads-settings-btn" onClick={() => router.push('/leads/settings')}>
+                <button
+                  className="icon-btn leads-settings-btn"
+                  data-spot-id="settings"
+                  data-spot-group="leads"
+                  data-spot-name="Settings"
+                  data-spot-summary="Use this button to configure lead table columns, email templates, triggers, and workflows."
+                  data-spot-position="bottom"
+                  onClick={() => router.push('/leads/settings')}
+                >                  
                   <i className="ri-settings-3-line" title="Settings" />
                 </button>
               )}
           
           <button
             className={`icon-btn refresh-btn leads-refresh-btn ${refreshing ? 'spinning' : ''}`}
+            data-spot-id="refresh"
+            data-spot-group="leads"
+            data-spot-name="Refresh"
+            data-spot-summary="Use this button to refresh and sync the leads table with the latest lead data."
+            data-spot-position="bottom"
             onClick={() => resetAndRefreshLeads()}
           >
             <i className="ri-refresh-line" title="Refresh" />

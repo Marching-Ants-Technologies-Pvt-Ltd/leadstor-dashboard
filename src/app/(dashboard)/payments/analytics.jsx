@@ -22,7 +22,14 @@ export default function PaymentAnalyticsOfTheDay({
     }, []);
 
     return (
-        <div className="flex gap-7 text-xs text-slate-500">
+        <div 
+        className="flex gap-7 text-xs text-slate-500"
+        data-spot-id="summary"
+        data-spot-group="payments"
+        data-spot-name="Payment Summary"
+        data-spot-summary="See today's outstanding amount, what was collected today, what is due today, and the total overdue amount till today."
+        data-spot-position="bottom"        
+        >
             <div>
                 <div>Today&apos;s Outstanding</div>
                 <div className="text-base font-semibold text-slate-900">Rs. {analytics?.outstanding ?? '0'}</div>
@@ -33,6 +40,11 @@ export default function PaymentAnalyticsOfTheDay({
             </div>
             <button
                 type="button"
+                    data-spot-id="due-today"
+                    data-spot-group="payments"
+                    data-spot-name="Due Today"
+                    data-spot-summary="Click this to show only the students whose pending payment is due today. Click again to clear it."
+                    data-spot-position="bottom"
                 onClick={() => onDueTodayClick?.()}
                 className={`text-left rounded-md px-2 py-1 transition ${
                     dueTodayActive

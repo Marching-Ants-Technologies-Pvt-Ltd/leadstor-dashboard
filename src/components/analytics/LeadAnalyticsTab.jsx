@@ -23,6 +23,7 @@ import {
   CHART_COLORS,
   toPieData,
 } from '@/utility/analyticsUtils';
+import { spot } from './tourSpot';
 
 const tooltipStyle = {
   backgroundColor: 'white',
@@ -55,7 +56,10 @@ export default function LeadAnalyticsTab({ data, loading, onShowTable }) {
   return (
     <div className="space-y-6">
       {/* KPI ROW */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div
+        {...spot('lead-kpis', 'Key Numbers', 'Six headline numbers for the selected period: total leads, converted, conversion rate, open leads, pending follow-ups and average days to convert. The arrow and percentage compare with the previous period.', 'bottom')}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4"
+      >        
         <KpiCard
           title="Total Leads"
           value={formatNumber(s.totalLeads)}
@@ -110,7 +114,10 @@ export default function LeadAnalyticsTab({ data, loading, onShowTable }) {
       </div>
 
       {/* HIGHLIGHT STRIP */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div
+        {...spot('lead-highlights', 'Top Counsellor and Best Source', 'See which counsellor and which source converted the most leads in this period.', 'bottom')}
+        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+      >        
         <HighlightCard
           icon="ri-trophy-line"
           label="Top Counsellor"
@@ -136,6 +143,7 @@ export default function LeadAnalyticsTab({ data, loading, onShowTable }) {
       {/* TREND */}
       <ChartCard
         title="Leads vs Conversions"
+        spot={spot('lead-trend', 'Leads vs Conversions', 'Monthly lead inflow against conversions. Click Tabular at the top right of any chart to see its data as a table.')}
         subtitle="Monthly lead inflow against conversions"
         data={trend.map((t) => ({ label: t.period, value: t.leads }))}
         onShowTable={onShowTable}
@@ -165,6 +173,7 @@ export default function LeadAnalyticsTab({ data, loading, onShowTable }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChartCard
           title="Lead Funnel"
+          spot={spot('lead-funnel', 'Lead Funnel', 'See how your leads are spread across each stage.')}
           subtitle="Stage-wise distribution of leads"
           data={funnel.map((f) => ({ label: f.stage, value: f.count }))}
           onShowTable={onShowTable}
@@ -187,6 +196,7 @@ export default function LeadAnalyticsTab({ data, loading, onShowTable }) {
 
         <ChartCard
           title="Status Distribution"
+          spot={spot('lead-status', 'Status Distribution', 'A breakdown of the current status of the leads in the selected range.')}
           subtitle="Current status of leads in range"
           data={toPieData(statuses, 'count')}
           onShowTable={onShowTable}
@@ -218,6 +228,7 @@ export default function LeadAnalyticsTab({ data, loading, onShowTable }) {
       {/* SOURCE PERFORMANCE */}
       <ChartCard
         title="Source Performance"
+        spot={spot('lead-sources', 'Source Performance', 'Compare leads and conversions for each acquisition source to see which channels work best.')}
         subtitle="Leads and conversions by acquisition source"
         data={sources.map((x) => ({ label: x.label, value: x.leads }))}
         onShowTable={onShowTable}
@@ -237,7 +248,10 @@ export default function LeadAnalyticsTab({ data, loading, onShowTable }) {
       </ChartCard>
 
       {/* COUNSELLOR LEADERBOARD */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+      <div
+        {...spot('lead-leaderboard', 'Counsellor Leaderboard', 'Counsellors ranked by conversions in the selected period, with their leads and conversion rate.')}
+        className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm"
+      >        
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="font-semibold text-slate-800">Counsellor Leaderboard</h3>
@@ -288,6 +302,7 @@ export default function LeadAnalyticsTab({ data, loading, onShowTable }) {
       {/* COURSE DISTRIBUTION */}
       <ChartCard
         title="Course Distribution"
+        spot={spot('lead-courses', 'Course Distribution', 'Leads and conversions for each course of interest.')}
         subtitle="Leads by course of interest"
         data={courses.map((x) => ({ label: x.label, value: x.leads }))}
         onShowTable={onShowTable}

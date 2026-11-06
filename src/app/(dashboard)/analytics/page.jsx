@@ -125,7 +125,14 @@ export default function AnalyticsPage() {
           </div>
 
           {/* TABS */}
-          <div className="inline-flex bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+          <div
+            className="inline-flex bg-white border border-slate-200 rounded-xl p-1 shadow-sm"
+            data-spot-id="tabs"
+            data-spot-group="analytics"
+            data-spot-name="Lead & Sales Analytics"
+            data-spot-summary="Switch between Lead Analytics, to see how your leads are performing, and Sales Analytics, to see your revenue."
+            data-spot-position="bottom"
+          >            
             {TABS.map((t) => (
               <button
                 key={t.key}
@@ -144,16 +151,24 @@ export default function AnalyticsPage() {
         </div>
 
         {/* FILTERS */}
-        <AnalyticsFilterBar
-          filters={filters}
-          setFilters={setFilters}
-          range={range}
-          setRange={setRange}
-          customRange={customRange}
-          setCustomRange={setCustomRange}
-          options={{ course, source, owner, status }}
-          showStatus={activeTab === 'lead'}
-        />
+        <div
+          data-spot-id="filters"
+          data-spot-group="analytics"
+          data-spot-name="Filters"
+          data-spot-summary="Narrow every card and chart on this page by date range, course, source, counsellor and, on Lead Analytics, status."
+          data-spot-position="bottom"
+        >
+          <AnalyticsFilterBar
+            filters={filters}
+            setFilters={setFilters}
+            range={range}
+            setRange={setRange}
+            customRange={customRange}
+            setCustomRange={setCustomRange}
+            options={{ course, source, owner, status }}
+            showStatus={activeTab === 'lead'}
+          />
+        </div>
 
         {/* TAB CONTENT */}
         {activeTab === 'lead' ? (
