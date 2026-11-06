@@ -43,6 +43,10 @@ export default function JoineePaymentForm({ payment_id }) {
     const [hasTrackingCourseOnLoad, setHasTrackingCourseOnLoad] = useState(false);
     const isEditMode = Number(payment_id) > 0;
     const [showHistory, setShowHistory] = useState(false);
+    // Guards the save/receipt request against double-click / rapid re-submits.
+    // Ref is the synchronous guard, state drives the disabled button UI.
+    const isSavingRef = useRef(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     // Helper Functions
     const pad = (n) => String(n).padStart(2, "0");
@@ -391,6 +395,11 @@ export default function JoineePaymentForm({ payment_id }) {
     }
 
     const saveChanges = () => {
+        // Double-click guard: ignore any click while a save is already in flight.
+        // The ref check is synchronous, so it blocks a second click fired in the
+        // same tick before React has re-rendered the disabled button.
+        if (isSavingRef.current) return;
+
         let payload = { ...candidate };
         // Never post preview/base64 image string in JSON payload.
         delete payload.image;
@@ -478,6 +487,10 @@ export default function JoineePaymentForm({ payment_id }) {
             requestPayload.append('candidateFile', selectedProfileImage);
         }
 
+        // Lock the button until the API responds (success or failure).
+        isSavingRef.current = true;
+        setIsSaving(true);
+
         xFetch({
             method: 'POST',
             path: '/services/joinees/saveCandidateTrackingDetails',
@@ -510,6 +523,11 @@ export default function JoineePaymentForm({ payment_id }) {
             .catch(error => {
                 console.error(`An error occurred while saving joinees details`, error);
                 toast.error('Unable to save details! Please try again');
+            })
+            .finally(() => {
+                // Always release the lock so the user can retry after a failure.
+                isSavingRef.current = false;
+                setIsSaving(false);
             });
 
     }
@@ -677,6 +695,7 @@ export default function JoineePaymentForm({ payment_id }) {
                 onChat={onWhatsappButtonClick}
                 gotoNotes={scrollToNotes}
                 onSave={saveChanges}
+                isSaving={isSaving}
             />
             <DayPickerModal
                 open={datePicker}
