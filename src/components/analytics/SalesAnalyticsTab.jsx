@@ -25,6 +25,7 @@ import {
   CHART_COLORS,
   toPieData,
 } from '@/utility/analyticsUtils';
+import { spot } from './tourSpot';
 
 const tooltipStyle = {
   backgroundColor: 'white',
@@ -63,7 +64,10 @@ export default function SalesAnalyticsTab({ data, loading, onShowTable }) {
   return (
     <div className="space-y-6">
       {/* KPI ROW */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div
+        {...spot('sales-kpis', 'Key Numbers', 'Admissions, total agreed deal value, amount collected, collection rate, and the outstanding and overdue amounts. Arrows compare with the previous period where shown.', 'bottom')}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4"
+      >        
         <KpiCard
           title="Admissions"
           value={formatNumber(s.admissions)}
@@ -113,7 +117,10 @@ export default function SalesAnalyticsTab({ data, loading, onShowTable }) {
       </div>
 
       {/* SECONDARY STRIP */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div
+        {...spot('sales-mini', 'More Numbers', 'Average deal size, expected collections in the next 30 days, refunds and reversals, and net collected.', 'bottom')}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+      >        
         <MiniStat label="Avg Deal Size" value={formatCurrency(s.avgDealSize)} icon="ri-scales-3-line" />
         <MiniStat
           label="Expected (Next 30 Days)"
@@ -127,6 +134,7 @@ export default function SalesAnalyticsTab({ data, loading, onShowTable }) {
       {/* REVENUE TREND */}
       <ChartCard
         title="Revenue Trend"
+        spot={spot('sales-revenue', 'Revenue Trend', 'Monthly collections. Click Tabular at the top right of any chart to see its data as a table.')}
         subtitle="Monthly collections (gross)"
         data={revenueTrend.map((r) => ({ label: r.period, value: r.collected }))}
         onShowTable={onShowTable}
@@ -160,6 +168,7 @@ export default function SalesAnalyticsTab({ data, loading, onShowTable }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChartCard
           title="Installment Health"
+          spot={spot('sales-health', 'Installment Health', 'How many active installments are paid, pending, overdue or defaulted.')}
           subtitle="Status of all active installments"
           data={healthData.map((h) => ({ label: h.label, value: h.value }))}
           onShowTable={onShowTable}
@@ -189,6 +198,7 @@ export default function SalesAnalyticsTab({ data, loading, onShowTable }) {
 
         <ChartCard
           title="Admission Status"
+          spot={spot('sales-admission', 'Admission Status', 'How your admissions are distributed by status.')}
           subtitle="Distribution of admissions by status"
           data={toPieData(admissionStatus, 'count')}
           onShowTable={onShowTable}
@@ -220,6 +230,7 @@ export default function SalesAnalyticsTab({ data, loading, onShowTable }) {
       {/* REVENUE BY COURSE */}
       <ChartCard
         title="Revenue by Course"
+        spot={spot('sales-course', 'Revenue by Course', 'Agreed value against the collected amount for each course.')}
         subtitle="Agreed value vs collected, per course"
         data={byCourse.map((x) => ({ label: x.label, value: x.agreed }))}
         onShowTable={onShowTable}
@@ -241,6 +252,7 @@ export default function SalesAnalyticsTab({ data, loading, onShowTable }) {
       {/* REVENUE BY SOURCE */}
       <ChartCard
         title="Revenue by Source"
+        spot={spot('sales-source', 'Revenue by Source', 'Agreed value against the collected amount for each source.')}
         subtitle="Agreed value vs collected, per source"
         data={bySource.map((x) => ({ label: x.label, value: x.agreed }))}
         onShowTable={onShowTable}
@@ -260,7 +272,10 @@ export default function SalesAnalyticsTab({ data, loading, onShowTable }) {
       </ChartCard>
 
       {/* REVENUE BY COUNSELLOR */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+      <div
+        {...spot('sales-counsellor', 'Revenue by Counsellor', 'Counsellors ranked by agreed deal value, with their admissions and collected amounts.')}
+        className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm"
+      >        
         <div className="mb-4">
           <h3 className="font-semibold text-slate-800">Revenue by Counsellor</h3>
           <p className="text-xs text-slate-500 mt-0.5">Ranked by agreed deal value</p>
