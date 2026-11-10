@@ -9,7 +9,7 @@ const validPathList: any = {
   'SIGNIN': "/signin",
   'VALIDATE_EMAIL': '/account-verification',
   'LEAD': '/leads',
-  'PAYMENT_DUE': '/pay/overdue',
+  'PAYMENT_DUE': '/pay/subscription',
 };
 
 export default function Home() {

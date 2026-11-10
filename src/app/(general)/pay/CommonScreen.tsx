@@ -35,11 +35,19 @@ interface BusinessInfo {
     name: string;
     plan: string;
     amount: string;
+    totalAmount?: string;
+    installmentCount?: number;
     dueDate: string;
     invoice: string;
     utr: string;
     signature: string;
     gateway: PaymentMode;
+    state?: "OK" | "UPCOMING" | "OVERDUE" | "BLOCKED";
+    subState?: "PAYMENT_DUE" | "VERIFYING" | "NO_INSTALLMENT" | "";
+    hasPendingInstallment?: boolean;
+    daysLeft?: number;
+    overdueDays?: number;
+    message?: string;
 }
 
 interface InfoRowProps {
@@ -73,15 +81,152 @@ interface UpiDetailsProps {
     invoice: string;
 }
 
-export default function CommonPaymentPage({
-    title,
-    description,
-    payType
-}: {
+type PaymentTone = "upcoming" | "overdue" | "blocked";
+
+interface PaymentView {
     title: string;
     description: string;
-    payType: "overdue" | "upcoming"
-}) {
+    tone: PaymentTone;
+    alertTitle: string;
+    alertMessage: string;
+    /** When true, the pay form is replaced by a status-only screen. */
+    statusOnly?: boolean;
+}
+
+const TONES: Record<PaymentTone, {
+    border: string;
+    bg: string;
+    iconBg: string;
+    iconText: string;
+    title: string;
+    body: string;
+}> = {
+    upcoming: {
+        border: "border-orange-200",
+        bg: "bg-orange-50",
+        iconBg: "bg-orange-100",
+        iconText: "text-orange-600",
+        title: "text-orange-900",
+        body: "text-orange-700",
+    },
+    overdue: {
+        border: "border-amber-200",
+        bg: "bg-amber-50",
+        iconBg: "bg-amber-100",
+        iconText: "text-amber-600",
+        title: "text-amber-900",
+        body: "text-amber-700",
+    },
+    blocked: {
+        border: "border-red-200",
+        bg: "bg-red-50",
+        iconBg: "bg-red-100",
+        iconText: "text-red-600",
+        title: "text-red-900",
+        body: "text-red-700",
+    },
+};
+
+/**
+ * Derives the whole screen copy from the backend payment state.
+ *   UPCOMING : due within 7 days  -> access granted, pay before due date
+ *   OVERDUE  : 1..29 days late    -> access granted, pay immediately
+ *   BLOCKED  : 30+ days late      -> access restricted, pay to restore
+ *
+ * The backend `message` is the source of truth (it carries the exact day
+ * count / tense). The local strings below are only a fallback.
+ */
+function getPaymentView(business: BusinessInfo): PaymentView {
+    const state = business.state ?? "UPCOMING";
+    const overdueDays = business.overdueDays ?? 0;
+    const daysLeft = business.daysLeft ?? 0;
+    const backendMessage = (business.message ?? "").trim();
+
+    const plural = (n: number) => (n === 1 ? "" : "s");
+
+    switch (state) {
+        case "BLOCKED": {
+            const subState = business.subState ?? "PAYMENT_DUE";
+
+            // UTR already submitted -> awaiting admin verification.
+            if (subState === "VERIFYING") {
+                return {
+                    title: "Verifying your payment",
+                    description:
+                        "We have received your payment details. Our team is verifying it and it may take a few hours to restore your access.",
+                    tone: "blocked",
+                    alertTitle: "Verifying your payment",
+                    alertMessage:
+                        backendMessage ||
+                        "Verifying your payment, it may take a few hours! You can contact us for any query.",
+                    statusOnly: true,
+                };
+            }
+
+            // Nothing pending -> only an admin can resolve this.
+            if (subState === "NO_INSTALLMENT") {
+                return {
+                    title: "Login disabled",
+                    description:
+                        "Your Leadstor login is currently disabled. Please contact our support team to get it resolved.",
+                    tone: "blocked",
+                    alertTitle: "Login disabled",
+                    alertMessage:
+                        backendMessage ||
+                        "Your login is disabled for Leadstor. Please contact the support team to get it resolved.",
+                    statusOnly: true,
+                };
+            }
+
+            // Pending installment, no UTR -> show the pay screen.
+            return {
+                title: "Payment required to restore access",
+                description:
+                    "Your Leadstor access has been restricted because your subscription payment is overdue by 30 days or more. Complete the payment below and submit your UTR to restore access.",
+                tone: "blocked",
+                alertTitle: "Access restricted",
+                alertMessage:
+                    backendMessage ||
+                    (overdueDays > 0
+                        ? `Your payment was due on ${business.dueDate} and is now overdue by ${overdueDays} day${plural(overdueDays)}. Your access has been restricted. Please pay immediately to restore access.`
+                        : "Your access has been restricted because your subscription payment is overdue. Please pay immediately to restore access."),
+            };
+        }
+
+        case "OVERDUE":
+            return {
+                title: "Payment overdue",
+                description:
+                    "Your Leadstor subscription payment is past its due date. You can still use your dashboard, but please pay immediately to avoid disruption.",
+                tone: "overdue",
+                alertTitle: "Payment overdue",
+                alertMessage:
+                    backendMessage ||
+                    (overdueDays > 0
+                        ? `Your payment was due on ${business.dueDate} and is now overdue by ${overdueDays} day${plural(overdueDays)}. Please pay immediately to avoid disruption.`
+                        : "Your subscription payment is overdue. Please pay immediately to avoid disruption."),
+            };
+
+        case "UPCOMING":
+        default:
+            return {
+                title: "Upcoming Payment",
+                description:
+                    "Your next Leadstor subscription payment is due soon. Complete the payment by the due date to keep your account access active.",
+                tone: "upcoming",
+                alertTitle: "Upcoming Payment",
+                alertMessage:
+                    backendMessage ||
+                    (business.dueDate
+                        ? daysLeft === 0
+                            ? `Your payment is due today (${business.dueDate}). Please pay now to avoid disruption.`
+                            : `Your payment is due on ${business.dueDate} (${daysLeft} day${plural(daysLeft)} left). Please pay before the due date to avoid disruption.`
+                        : "Your Leadstor subscription payment is due soon. Pay by the due date to avoid any interruption in access."),
+            };
+    }
+}
+
+export default function CommonPaymentPage() {
     const [paymentMode, setPaymentMode] = useState<PaymentMode>(null);
     const [utr, setUtr] = useState<string>("");
     const [submitted, setSubmitted] = useState<boolean>(false);
@@ -96,7 +241,13 @@ export default function CommonPaymentPage({
         signature: "",
         utr: "",
         gateway: "upi",
+        state: "UPCOMING",
+        overdueDays: 0,
     });
+
+    // Single source of truth for all screen copy — derived from the backend state.
+    const view = getPaymentView(business);
+    const tone = TONES[view.tone];
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -199,11 +350,11 @@ export default function CommonPaymentPage({
             <div className="mb-8">
 
                 <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-                    {title}
+                    {view.title}
                 </h1>
 
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
-                    {description}
+                    {view.description}
                 </p>
 
             </div>
@@ -211,46 +362,24 @@ export default function CommonPaymentPage({
             <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
                 {/* LEFT SIDE */}
                 <div className="space-y-5">
-                    {/* Alert */}
-                    {payType === 'overdue' ? (
-                        <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
-                            <div className="flex gap-3">
-                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
-                                    <FiAlertCircle size={19} />
-                                </div>
+                    {/* Alert — tone driven by backend state */}
+                    <div className={`rounded-2xl border ${tone.border} ${tone.bg} p-5`}>
+                        <div className="flex gap-3">
+                            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${tone.iconBg} ${tone.iconText}`}>
+                                <FiAlertCircle size={19} />
+                            </div>
 
-                                <div>
-                                    <p className="font-semibold text-red-900">
-                                        Payment overdue
-                                    </p>
+                            <div>
+                                <p className={`font-semibold ${tone.title}`}>
+                                    {view.alertTitle}
+                                </p>
 
-                                    <p className="mt-1 text-sm leading-5 text-red-700">
-                                        Your access to Leadstor has been temporarily
-                                        restricted because your subscription payment
-                                        is overdue.
-                                    </p>
-                                </div>
+                                <p className={`mt-1 text-sm leading-5 ${tone.body}`}>
+                                    {view.alertMessage}
+                                </p>
                             </div>
                         </div>
-                    ) : (
-                        <div className="rounded-2xl border border-orange-200 bg-orange-50 p-5">
-                            <div className="flex gap-3">
-                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-100 text-orange-600">
-                                    <FiAlertCircle size={19} />
-                                </div>
-
-                                <div>
-                                    <p className="font-semibold text-orange-900">
-                                        Upcoming Payment
-                                    </p>
-
-                                    <p className="mt-1 text-sm leading-5 text-orange-700">
-                                        Your Leadstor subscription payment is due soon. Pay by the due date to avoid any interruption in access.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    </div>
 
                     {/* Business information */}
                     {status === 'Found' ? (
@@ -283,22 +412,39 @@ export default function CommonPaymentPage({
                             <div className="my-5 h-px bg-slate-100" />
 
                             <div className="space-y-4">
-                                <InfoRow
-                                    label="Amount due"
-                                    value={business.amount}
-                                    valueClass="font-bold text-slate-900"
-                                />
+                                {business.hasPendingInstallment !== false && (
+                                    <>
+                                        <InfoRow
+                                            label="Amount due"
+                                            value={business.totalAmount || business.amount}
+                                            valueClass="font-bold text-slate-900"
+                                        />
 
-                                <InfoRow
-                                    label="Due date"
-                                    value={business.dueDate}
-                                    valueClass="text-red-600"
-                                />
+                                        {(business.installmentCount ?? 1) > 1 && (
+                                            <InfoRow
+                                                label="Pending installments"
+                                                value={`${business.installmentCount}`}
+                                            />
+                                        )}
 
-                                <InfoRow
-                                    label="Invoice"
-                                    value={business.invoice}
-                                />
+                                        <InfoRow
+                                            label="Due date"
+                                            value={business.dueDate}
+                                            valueClass="text-red-600"
+                                        />
+
+                                        <InfoRow
+                                            label="Invoice"
+                                            value={business.invoice}
+                                        />
+                                    </>
+                                )}
+
+                                {business.hasPendingInstallment === false && (
+                                    <p className="text-sm text-slate-500">
+                                        No pending payment is on record for this account.
+                                    </p>
+                                )}
                             </div>
                         </div>
                     ) : (
@@ -385,7 +531,32 @@ export default function CommonPaymentPage({
                 {/* RIGHT SIDE */}
                 {status === 'Found' ? (
                     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-                        {!submitted ? (
+                        {view.statusOnly ? (
+                            /* STATUS-ONLY (blocked: verifying / contact support) */
+                            <div className="flex min-h-[600px] flex-col items-center justify-center px-6 py-12 text-center">
+                                <div className={`flex h-16 w-16 items-center justify-center rounded-full ${tone.iconBg} ${tone.iconText}`}>
+                                    <FiClock size={32} />
+                                </div>
+
+                                <h2 className="mt-6 text-2xl font-bold text-slate-900">
+                                    {view.alertTitle}
+                                </h2>
+
+                                <p className="mt-3 max-w-md text-sm leading-6 text-slate-500">
+                                    {view.alertMessage}
+                                </p>
+
+                                <a
+                                    href={WHATSAPP_SUPPORT}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="mt-6 inline-flex items-center gap-2 rounded-xl bg-green-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-green-700"
+                                >
+                                    <FiMessageCircle size={18} />
+                                    Chat with Support on WhatsApp
+                                </a>
+                            </div>
+                        ) : !submitted ? (
                             <form onSubmit={handleSubmit}>
                                 {/* Card header */}
                                 <div className="border-b border-slate-100 p-6">
@@ -408,7 +579,7 @@ export default function CommonPaymentPage({
 
                                             <p className="text-lg font-bold text-zinc-700 flex justify-center items-center">
                                                 <PiCurrencyInrBold size={15} />
-                                                {business.amount}
+                                                {business.totalAmount || business.amount}
                                             </p>
                                         </div>
                                     </div>
@@ -482,12 +653,12 @@ export default function CommonPaymentPage({
                                             {paymentMode === "bank" ? (
                                                 <BankDetails
                                                     details={bankDetails}
-                                                    amount={business.amount}
+                                                    amount={business.totalAmount || business.amount}
                                                 />
                                             ) : (
                                                 <UPIDetails
                                                     details={upiDetails}
-                                                    amount={business.amount}
+                                                    amount={business.totalAmount || business.amount}
                                                     invoice={business.invoice}
                                                 />
                                             )}

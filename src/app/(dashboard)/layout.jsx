@@ -29,13 +29,40 @@ export default function ClientLayout({ children }) {
 
       // Get current session data from localstorage
       const data = JSON.parse(localStorage.getItem('CurrentSessionData'));
-      
+
       // User is trying to access directly, without proper session initialization
       // So redirect back to main controller to verify and set session properly.
       // This is to avoid direct access when payment overdue.
       if (!data) {
         router.push('/');
         return;
+      }
+
+      // Payment gate: a corporate overdue by 30+ days must not reach the dashboard.
+      // Re-verify live so a stale 24h token cannot bypass the block.
+      try {
+        const token = sessionData?.user?.cn_token || '';
+        if (token.length > 30) {
+          const myHeaders = new Headers();
+          myHeaders.append("Content-Type", "application/json");
+          myHeaders.append("Authorization", "Bearer " + token);
+
+          const res = await fetch(`${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/profile/paymentOverdue`, {
+            method: "GET",
+            headers: myHeaders,
+            redirect: "follow"
+          });
+
+          if (res.status === 200) {
+            const status = await res.json();
+            if (status?.state === 'BLOCKED') {
+              router.replace('/pay/subscription');
+              return;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('[LEADSTOR] payment gate', error);
       }
 
       setSession(data);
