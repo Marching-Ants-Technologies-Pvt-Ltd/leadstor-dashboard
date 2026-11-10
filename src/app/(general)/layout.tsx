@@ -18,6 +18,7 @@ export default function GeneralLayout({
     const checkOverdueStatus = useCallback(async (token: string) => {
 
         let _data = {
+            state: "OK",
             expiryDate: "",
             isExpired: false
         };
@@ -41,6 +42,7 @@ export default function GeneralLayout({
 
             const data = await response.json();
 
+            _data.state = data?.state || 'OK';
             _data.expiryDate = data?.expiryDate || '';
             _data.isExpired = data?.isExpired || false;
 
@@ -66,22 +68,11 @@ export default function GeneralLayout({
             if (window.location.pathname.startsWith('/pay/')) {
                 const status = await checkOverdueStatus(data?.user?.cn_token);
 
-                // No due? Always take back to main page
+                // No pending payment? Always take back to main page.
+                // /pay/subscription is the single payment screen; its copy is
+                // driven by the backend payment state.
                 if (status.expiryDate.length < 3) {
                     router.push('/');
-                    return;
-                }
-
-                // Check if plan is expired but user trying to visit subscription payment screen
-                // Then always redirect to /pay/overdue 
-                if (status.isExpired && window.location.pathname === '/pay/subscription') {
-                    router.push('/pay/overdue');
-                    return;
-                }
-
-                // Vice-versa
-                if (!status.isExpired && window.location.pathname === '/pay/overdue') {
-                    router.push('/pay/subscription');
                     return;
                 }
 
