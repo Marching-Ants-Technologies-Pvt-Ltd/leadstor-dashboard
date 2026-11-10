@@ -43,6 +43,8 @@ interface BusinessInfo {
     signature: string;
     gateway: PaymentMode;
     state?: "OK" | "UPCOMING" | "OVERDUE" | "BLOCKED";
+    subState?: "PAYMENT_DUE" | "VERIFYING" | "NO_INSTALLMENT" | "";
+    hasPendingInstallment?: boolean;
     daysLeft?: number;
     overdueDays?: number;
     message?: string;
@@ -87,6 +89,8 @@ interface PaymentView {
     tone: PaymentTone;
     alertTitle: string;
     alertMessage: string;
+    /** When true, the pay form is replaced by a status-only screen. */
+    statusOnly?: boolean;
 }
 
 const TONES: Record<PaymentTone, {
@@ -141,7 +145,40 @@ function getPaymentView(business: BusinessInfo): PaymentView {
     const plural = (n: number) => (n === 1 ? "" : "s");
 
     switch (state) {
-        case "BLOCKED":
+        case "BLOCKED": {
+            const subState = business.subState ?? "PAYMENT_DUE";
+
+            // UTR already submitted -> awaiting admin verification.
+            if (subState === "VERIFYING") {
+                return {
+                    title: "Verifying your payment",
+                    description:
+                        "We have received your payment details. Our team is verifying it and it may take a few hours to restore your access.",
+                    tone: "blocked",
+                    alertTitle: "Verifying your payment",
+                    alertMessage:
+                        backendMessage ||
+                        "Verifying your payment, it may take a few hours! You can contact us for any query.",
+                    statusOnly: true,
+                };
+            }
+
+            // Nothing pending -> only an admin can resolve this.
+            if (subState === "NO_INSTALLMENT") {
+                return {
+                    title: "Login disabled",
+                    description:
+                        "Your Leadstor login is currently disabled. Please contact our support team to get it resolved.",
+                    tone: "blocked",
+                    alertTitle: "Login disabled",
+                    alertMessage:
+                        backendMessage ||
+                        "Your login is disabled for Leadstor. Please contact the support team to get it resolved.",
+                    statusOnly: true,
+                };
+            }
+
+            // Pending installment, no UTR -> show the pay screen.
             return {
                 title: "Payment required to restore access",
                 description:
@@ -154,6 +191,7 @@ function getPaymentView(business: BusinessInfo): PaymentView {
                         ? `Your payment was due on ${business.dueDate} and is now overdue by ${overdueDays} day${plural(overdueDays)}. Your access has been restricted. Please pay immediately to restore access.`
                         : "Your access has been restricted because your subscription payment is overdue. Please pay immediately to restore access."),
             };
+        }
 
         case "OVERDUE":
             return {
@@ -374,29 +412,39 @@ export default function CommonPaymentPage() {
                             <div className="my-5 h-px bg-slate-100" />
 
                             <div className="space-y-4">
-                                <InfoRow
-                                    label="Amount due"
-                                    value={business.totalAmount || business.amount}
-                                    valueClass="font-bold text-slate-900"
-                                />
+                                {business.hasPendingInstallment !== false && (
+                                    <>
+                                        <InfoRow
+                                            label="Amount due"
+                                            value={business.totalAmount || business.amount}
+                                            valueClass="font-bold text-slate-900"
+                                        />
 
-                                {(business.installmentCount ?? 1) > 1 && (
-                                    <InfoRow
-                                        label="Pending installments"
-                                        value={`${business.installmentCount}`}
-                                    />
+                                        {(business.installmentCount ?? 1) > 1 && (
+                                            <InfoRow
+                                                label="Pending installments"
+                                                value={`${business.installmentCount}`}
+                                            />
+                                        )}
+
+                                        <InfoRow
+                                            label="Due date"
+                                            value={business.dueDate}
+                                            valueClass="text-red-600"
+                                        />
+
+                                        <InfoRow
+                                            label="Invoice"
+                                            value={business.invoice}
+                                        />
+                                    </>
                                 )}
 
-                                <InfoRow
-                                    label="Due date"
-                                    value={business.dueDate}
-                                    valueClass="text-red-600"
-                                />
-
-                                <InfoRow
-                                    label="Invoice"
-                                    value={business.invoice}
-                                />
+                                {business.hasPendingInstallment === false && (
+                                    <p className="text-sm text-slate-500">
+                                        No pending payment is on record for this account.
+                                    </p>
+                                )}
                             </div>
                         </div>
                     ) : (
@@ -483,7 +531,32 @@ export default function CommonPaymentPage() {
                 {/* RIGHT SIDE */}
                 {status === 'Found' ? (
                     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-                        {!submitted ? (
+                        {view.statusOnly ? (
+                            /* STATUS-ONLY (blocked: verifying / contact support) */
+                            <div className="flex min-h-[600px] flex-col items-center justify-center px-6 py-12 text-center">
+                                <div className={`flex h-16 w-16 items-center justify-center rounded-full ${tone.iconBg} ${tone.iconText}`}>
+                                    <FiClock size={32} />
+                                </div>
+
+                                <h2 className="mt-6 text-2xl font-bold text-slate-900">
+                                    {view.alertTitle}
+                                </h2>
+
+                                <p className="mt-3 max-w-md text-sm leading-6 text-slate-500">
+                                    {view.alertMessage}
+                                </p>
+
+                                <a
+                                    href={WHATSAPP_SUPPORT}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="mt-6 inline-flex items-center gap-2 rounded-xl bg-green-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-green-700"
+                                >
+                                    <FiMessageCircle size={18} />
+                                    Chat with Support on WhatsApp
+                                </a>
+                            </div>
+                        ) : !submitted ? (
                             <form onSubmit={handleSubmit}>
                                 {/* Card header */}
                                 <div className="border-b border-slate-100 p-6">

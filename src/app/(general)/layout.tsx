@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { SessionProvider, getSession } from "next-auth/react";
 import Image from 'next/image';
 import { IoIosExit } from "react-icons/io";
+import { FiArrowRight } from "react-icons/fi";
 import Link from 'next/link';
 
 export default function GeneralLayout({
@@ -14,6 +15,7 @@ export default function GeneralLayout({
 }>) {
     const router = useRouter();
     const [ready, setReady] = useState<boolean>(false);
+    const [paymentState, setPaymentState] = useState<string>('OK');
 
     const checkOverdueStatus = useCallback(async (token: string) => {
 
@@ -68,14 +70,16 @@ export default function GeneralLayout({
             if (window.location.pathname.startsWith('/pay/')) {
                 const status = await checkOverdueStatus(data?.user?.cn_token);
 
-                // No pending payment? Always take back to main page.
-                // /pay/subscription is the single payment screen; its copy is
-                // driven by the backend payment state.
-                if (status.expiryDate.length < 3) {
+                // If the account is BLOCKED, always keep the user on the pay
+                // screen (even with no pending installment — they must contact
+                // support). Otherwise, if there is nothing pending, send them
+                // back to the dashboard.
+                if (status.state !== 'BLOCKED' && status.expiryDate.length < 3) {
                     router.push('/');
                     return;
                 }
 
+                setPaymentState(status.state);
             }
 
             localStorage.setItem('LEADSTOR_SESSION_TOKEN', data?.user?.cn_token);
@@ -92,25 +96,35 @@ export default function GeneralLayout({
                 <div className="mx-auto max-w-6xl">
 
                     {/* Header */}
-                    <div className='flex justify-between items-center mb-16'>
-                        <div className="flex items-center gap-2">
-                            <div className="flex h-7 w-7 items-center justify-center">
+                    <div className='flex justify-between items-center mb-12 pb-5 border-b border-zinc-200'>
+                        <div className="flex items-center gap-2.5">
+                            <div className="flex h-8 w-8 items-center justify-center">
                                 <Image
                                     src="/icons/leadstor.png"
                                     alt='Leadstor Logo'
                                     width={50}
                                     height={50}
-                                    className='h-7 w-7'
+                                    className='h-8 w-8'
                                 />
                             </div>
 
-                            <span className=" text-lg font-medium text-slate-500">Leadstor</span>
+                            <div className="flex flex-col leading-none">
+                                <span className="text-base font-semibold text-slate-700">Leadstor</span>
+                                <span className="text-[11px] text-slate-400 mt-0.5">Subscription &amp; Billing</span>
+                            </div>
                         </div>
                         <div className="flex items-center justify-center gap-2">
-                            <Link href="/signout" className='bg-zinc-50 border-zinc-200 text-zinc-500 hover:bg-rose-50 hover:text-rose-500 cursor-pointer px-2 h-7 flex justify-center items-center gap-1'>
-                                <span className='text-[13px] font-semibold'>SignOut</span>
-                                <IoIosExit size={20} className='text-rose-500' />
-                            </Link>
+                            {paymentState === 'BLOCKED' ? (
+                                <Link href="/signout" className='bg-zinc-50 border border-zinc-200 text-zinc-500 hover:bg-rose-50 hover:text-rose-500 hover:border-rose-200 cursor-pointer rounded-md px-3 h-8 flex justify-center items-center gap-1.5 transition'>
+                                    <span className='text-[13px] font-semibold'>Sign Out</span>
+                                    <IoIosExit size={18} className='text-rose-500' />
+                                </Link>
+                            ) : (
+                                <Link href="/" className='bg-zinc-900 text-white hover:bg-zinc-800 cursor-pointer rounded-md px-3 h-8 flex justify-center items-center gap-1.5 transition'>
+                                    <span className='text-[13px] font-semibold'>Go to Dashboard</span>
+                                    <FiArrowRight size={16} />
+                                </Link>
+                            )}
                         </div>
                     </div>
 
