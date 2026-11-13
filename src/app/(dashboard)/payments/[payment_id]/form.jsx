@@ -507,7 +507,7 @@ export default function JoineePaymentForm({ payment_id }) {
                         router.push(`/payments/${data.id}`);
                     }, 800);
 
-                   return;
+                    return;
                 }
 
                 // Case 2: Update / Edit existing record
