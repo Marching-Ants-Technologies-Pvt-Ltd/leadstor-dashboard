@@ -503,18 +503,18 @@ export default function JoineePaymentForm({ payment_id }) {
                     toast.success('Changes saved successfully!', {
                         autoClose: 2000,
                     });
-                    // setTimeout(() => {
-                    //     router.push(`/payments/${data.id}`);
-                    // }, 800);
+                    setTimeout(() => {
+                        router.push(`/payments/${data.id}`);
+                    }, 800);
 
-                   // return;
+                   return;
                 }
 
                 // Case 2: Update / Edit existing record
                 if (data.event === 'UPDATED' || data.id) {   // fallback if only id is returned
                     toast.success('Changes Saved Successfully.');
-                    // window.location.reload();
-                    // return;
+                    window.location.reload();
+                    return;
                 }
 
                 // Fallback - if we reach here, something is wrong with response
