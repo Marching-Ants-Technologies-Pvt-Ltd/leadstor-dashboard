@@ -7,7 +7,8 @@ export default function JoineePaymentAnalytics({
     currency = '₹',
     onChat = () => { },
     gotoNotes = () => { },
-    onSave = () => { }
+    onSave = () => { },
+    isSaving = false
 }) {
     const [report, setReport] = useState({
         agreed: 0,
@@ -97,7 +98,13 @@ export default function JoineePaymentAnalytics({
                     </svg>
                     <div>Whatsapp Chat</div>
                 </button>
-                <button className="px-4 py-2 text-sm border border-blue-500 bg-blue-500 rounded text-white" onClick={onSave}>Save Changes</button>
+                <button
+                    className="px-4 py-2 text-sm border border-blue-500 bg-blue-500 rounded text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                    onClick={onSave}
+                    disabled={isSaving}
+                >
+                    {isSaving ? 'Saving…' : 'Save Changes'}
+                </button>
                 <button className='border-l border-gray-200 pl-4 ml-4' title='Close' onClick={() => router.back()}>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="#f54646" fill="none" stroke="#f54646" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085" />

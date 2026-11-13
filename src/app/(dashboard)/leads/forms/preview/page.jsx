@@ -7,6 +7,10 @@ export default function FormPreviewPage() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
+  if (!/^[A-Za-z0-9+/=]+$/.test(token || "")) {
+    return <div style={{ padding: 40, textAlign: "center" }}>Invalid preview link.</div>;
+  }
+
   const widgetSrc = `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/form-widget/composer.js?t=${Date.now()}`;
 
   const iframeDoc = `

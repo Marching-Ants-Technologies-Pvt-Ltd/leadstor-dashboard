@@ -1,10 +1,13 @@
 'use client'
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { xFetch } from '@/utility/xFetch';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Corporate, User } from '@/utility/TinyDB';
 import CustomSelect from '@/components/CustomSelect';
+
+const JoditEditor = dynamic(() => import('jodit-react'), { ssr: false });
 
 export default function SendEmailModal({ isOpen, onClose, ids, emails = [] }) {
   const [templates, setTemplates] = useState([]);
@@ -15,6 +18,23 @@ export default function SendEmailModal({ isOpen, onClose, ids, emails = [] }) {
   const [attachment, setAttachment] = useState(null);
   const [isSending, setIsSending] = useState(false);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
+
+  const editorRef = useRef(null);
+  // Bumped whenever `message` is replaced programmatically so Jodit remounts with the new HTML
+  const [editorKey, setEditorKey] = useState(0);
+
+  // Same toolbar as EmailTemplateManager.jsx (kept static so Jodit doesn't re-init)
+  const joditConfig = useMemo(() => ({
+    height: 320,
+    toolbarAdaptive: false,
+    enableDragAndDropFileToEditor: false,
+    buttons:
+      'source,|,bold,italic,underline,|,ul,ol,|,link,image,table,|,align,left,center,right,justify',
+    buttonsMD:
+      'source,|,bold,italic,underline,|,ul,ol,|,link,image,table,|,align,left,center,right,justify',
+    buttonsSM: 'source,|,bold,italic,underline,|,ul,ol,|,link,image,table',
+    buttonsXS: 'source,|,bold,italic,underline,|,ul,ol,|,link,image',
+  }), []);
 
   // Reset all fields on open/close
   useEffect(() => {
@@ -36,6 +56,7 @@ export default function SendEmailModal({ isOpen, onClose, ids, emails = [] }) {
       setCc('');
       setSubject('');
       setMessage('Dear $firstName');
+      setEditorKey(k => k + 1);
       setAttachment(null);
       setTemplateId('');
     }
@@ -59,14 +80,17 @@ export default function SendEmailModal({ isOpen, onClose, ids, emails = [] }) {
         if (templateData) {
           setSubject(templateData.subject || '');
           setMessage(templateData.htmlContent || 'Dear $firstName');
+          setEditorKey(k => k + 1);
         }
       } catch {
         setSubject('');
         setMessage('Dear $firstName');
+        setEditorKey(k => k + 1);
       }
     } else {
       setSubject('');
       setMessage('Dear $firstName');
+      setEditorKey(k => k + 1);
     }
   };
 
@@ -99,7 +123,9 @@ export default function SendEmailModal({ isOpen, onClose, ids, emails = [] }) {
 
   // Compute if any candidates are selected
   const hasCandidates = (Array.isArray(ids) && ids.length > 0) || (Array.isArray(emails) && emails.length > 0);
-  const allFieldsFilled = subject.trim() && message.trim() && hasCandidates;
+  // Jodit leaves markup like <p><br></p> when emptied, so check the visible text (or an image)
+  const hasBody = /<img/i.test(message) || message.replace(/<[^>]*>|&nbsp;/g, '').trim().length > 0;
+  const allFieldsFilled = subject.trim() && hasBody && hasCandidates;
 
   // Send email logic (matches legacy API)
   const handleSend = async () => {
@@ -121,7 +147,9 @@ export default function SendEmailModal({ isOpen, onClose, ids, emails = [] }) {
       formData.append('ids', Array.isArray(ids) ? ids.join(',') : ids);
       formData.append('type', 'Email');
       formData.append('ccEmail', cc);
-      formData.append('content', toBase64Utf8(message));
+      const editorValue = editorRef.current?.value;
+      const latestMessage = typeof editorValue === 'string' && editorValue.length > 0 ? editorValue : message;
+      formData.append('content', toBase64Utf8(latestMessage));
       formData.append('contentEncoding', 'base64');
       formData.append('subject', subject);
       formData.append('corporateId', Corporate?._id || '');
@@ -178,6 +206,7 @@ export default function SendEmailModal({ isOpen, onClose, ids, emails = [] }) {
         setCc('');
         setSubject('');
         setMessage('Dear $firstName');
+        setEditorKey(k => k + 1);
         setAttachment(null);
         setTemplateId('');
         window.tableRefresh();
@@ -202,8 +231,8 @@ export default function SendEmailModal({ isOpen, onClose, ids, emails = [] }) {
   const drawerStyle = {
     position: 'fixed',
     top: 0,
-    right: isOpen ? 0 : '-400px',
-    width: 400,
+    right: isOpen ? 0 : '-820px',
+    width: 'min(820px, 100vw)',
     height: '100vh',
     background: 'white',
     zIndex: 1001,
@@ -297,14 +326,15 @@ export default function SendEmailModal({ isOpen, onClose, ids, emails = [] }) {
               />
             </div>
           <div style={{ marginBottom: 24 }}>
-              <textarea
-              style={{ width: '100%', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, padding: '10px 12px', minHeight: 180, color: '#333', background: 'white', resize: 'vertical', outline: 'none', fontFamily: 'system-ui, -apple-system, sans-serif' }}
-                rows={10}
-              placeholder="Message"
-              value={message}
-              onChange={e => setMessage(e.target.value)}
-                disabled={isSending}
-            />
+              <div style={{ opacity: isSending ? 0.6 : 1, pointerEvents: isSending ? 'none' : 'auto' }}>
+                <JoditEditor
+                  key={editorKey}
+                  ref={editorRef}
+                  value={message}
+                  config={joditConfig}
+                  onBlur={(html) => setMessage(html || '')}
+                />
+              </div>
           </div>
           <div style={{ marginBottom: 24 }}>
             <label style={{ fontWeight: 600, color: '#222', fontSize: 15, marginBottom: 8, display: 'block' }}>Attachment</label>
