@@ -37,13 +37,7 @@ export default function JoineeInstallments({
     };
 
     const addNewInstallment = () => {
-        // Use the highest existing key instead of the item count so a gap left by a
-        // deleted installment does not make the new installment reuse an existing key.
-        const nextNumber = Items.reduce((max, [key]) => {
-            const numericKey = Number(key);
-            return Number.isFinite(numericKey) ? Math.max(max, numericKey) : max;
-        }, 0) + 1;
-        onInstallmentEdit({ count: nextNumber, type: 'Create', currencyIcon: currency, date: todayStr });
+        onInstallmentEdit({ count: Items.length + 1, type: 'Create', currencyIcon: currency, date: todayStr });
     }
 
     return (
