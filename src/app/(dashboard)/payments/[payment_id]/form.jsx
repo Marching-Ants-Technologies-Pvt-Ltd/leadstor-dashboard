@@ -47,6 +47,9 @@ export default function JoineePaymentForm({ payment_id }) {
     // Ref is the synchronous guard, state drives the disabled button UI.
     const isSavingRef = useRef(false);
     const [isSaving, setIsSaving] = useState(false);
+    // Bumped after a successful save so newly created installments receive their
+    // database _id instead of being treated as new again on the next save.
+    const [refreshKey, setRefreshKey] = useState(0);
 
     // Helper Functions
     const pad = (n) => String(n).padStart(2, "0");
@@ -345,12 +348,17 @@ export default function JoineePaymentForm({ payment_id }) {
         setCandidate(prev => {
             if (!prev) return prev;
 
+            // A newly created installment must not inherit the _id or installmentNumber
+            // of an existing installment that happens to share the same key.
+            const isCreate = data?.type === 'Create';
+            const existing = isCreate ? {} : (prev.installments?.[data.count] ?? {});
+
             return {
                 ...prev,
                 installments: {
                     ...(prev.installments ?? {}),
                     [data.count]: {
-                        ...(prev.installments?.[data.count] ?? {}),
+                        ...existing,
                         ...fixed,
                     },
                 },
@@ -486,7 +494,6 @@ export default function JoineePaymentForm({ payment_id }) {
         if (selectedProfileImage) {
             requestPayload.append('candidateFile', selectedProfileImage);
         }
-
         // Lock the button until the API responds (success or failure).
         isSavingRef.current = true;
         setIsSaving(true);
@@ -513,12 +520,14 @@ export default function JoineePaymentForm({ payment_id }) {
                 // Case 2: Update / Edit existing record
                 if (data.event === 'UPDATED' || data.id) {   // fallback if only id is returned
                     toast.success('Changes Saved Successfully.');
-                    window.location.reload();
+                    // Re-hydrate so newly created installments receive their persisted _id.
+                    setRefreshKey(prev => prev + 1);
                     return;
                 }
 
                 // Fallback - if we reach here, something is wrong with response
                 toast.success('Changes Saved Successfully.');  // safe default
+                setRefreshKey(prev => prev + 1);
             })
             .catch(error => {
                 console.error(`An error occurred while saving joinees details`, error);
@@ -675,7 +684,7 @@ export default function JoineePaymentForm({ payment_id }) {
             isMounted = false;
         };
 
-    }, [corporateId, payment_id]);
+    }, [corporateId, payment_id, refreshKey]);
 
     // Checks
     if (!candidate?.name) {
