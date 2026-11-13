@@ -404,7 +404,7 @@ export default function JoineePaymentForm({ payment_id }) {
         // Never post preview/base64 image string in JSON payload.
         delete payload.image;
         payload.installments = normalizeInstallmentsForSave(payload?.installments);
-
+        
         // Check For Remarks
         if (payload.remarks === '') {
             if (payload.last_remark === '') {
@@ -486,7 +486,7 @@ export default function JoineePaymentForm({ payment_id }) {
         if (selectedProfileImage) {
             requestPayload.append('candidateFile', selectedProfileImage);
         }
-
+        
         // Lock the button until the API responds (success or failure).
         isSavingRef.current = true;
         setIsSaving(true);
