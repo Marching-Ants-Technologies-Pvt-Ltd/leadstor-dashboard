@@ -400,11 +400,11 @@ export default function JoineePaymentForm({ payment_id }) {
         // same tick before React has re-rendered the disabled button.
         if (isSavingRef.current) return;
 
-        let payload = { ...candidate };console.log(payload);
+        let payload = { ...candidate };
         // Never post preview/base64 image string in JSON payload.
         delete payload.image;
         payload.installments = normalizeInstallmentsForSave(payload?.installments);
-        console.log(payload);
+        
         // Check For Remarks
         if (payload.remarks === '') {
             if (payload.last_remark === '') {
@@ -486,7 +486,7 @@ export default function JoineePaymentForm({ payment_id }) {
         if (selectedProfileImage) {
             requestPayload.append('candidateFile', selectedProfileImage);
         }
-        console.log('Saving payload:', payload);
+        
         // Lock the button until the API responds (success or failure).
         isSavingRef.current = true;
         setIsSaving(true);
