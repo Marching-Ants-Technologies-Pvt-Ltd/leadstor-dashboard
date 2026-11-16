@@ -44,3 +44,12 @@ export const MonthNameByIndex = [
     'Nov',
     'Dec',
 ];
+
+// The installment endpoints can answer with an empty body or a wrapped object,
+// so only a real list is safe to render. Anything else would crash on .map().
+export const toInstallmentList = (data) => {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.data)) return data.data;
+    if (Array.isArray(data?.installments)) return data.installments;
+    return null;
+};

@@ -1,22 +1,32 @@
 import { useState, useEffect } from "react";
+import { toast } from 'react-toastify';
 import { xFetch } from '@/utility/xFetch';
+import { toInstallmentList } from './paymentUtils';
 
 export default function PendingInstallments({ open, onClose }) {
 
     const [info, setInfo] = useState(null);
+    const [loadFailed, setLoadFailed] = useState(false);
 
     useEffect(() => {
         setInfo(null);
+        setLoadFailed(false);
         if (open && open?.amount !== '0' && open?.amount !== '') {
             xFetch({
                 path: '/services/joinees/getPendingPaymentInstallments',
                 payload: { trackingId: open?.id }
             })
                 .then(data => {
-                    setInfo(data);
+                    const list = toInstallmentList(data);
+                    if (list) {
+                        setInfo(list);
+                    } else {
+                        setLoadFailed(true);
+                    }
                 })
                 .catch(error => {
-                    console.error(`An error occurred while fetching leads`, error);
+                    console.error(`An error occurred while fetching pending installments`, error);
+                    setLoadFailed(true);
                     toast.error('Server error occurred, Try again');
                 });
         }
@@ -42,11 +52,15 @@ export default function PendingInstallments({ open, onClose }) {
                         ✕
                     </button>
                 </div>
-                {!info ? (
+                {loadFailed ? (
+                    <h3 className="text-base font-semibold text-gray-800">
+                        Unable to load pending installments. Please try again.
+                    </h3>
+                ) : !info ? (
                     <h3 className="text-base font-semibold text-gray-800">
                         Getting Pending Installments...
                     </h3>
-                ) : info?.length < 1 ? (
+                ) : info.length < 1 ? (
                     <h3 className="text-base font-semibold text-gray-800">
                         No Installment Found
                     </h3>
