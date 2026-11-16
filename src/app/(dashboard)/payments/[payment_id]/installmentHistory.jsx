@@ -32,8 +32,7 @@ export default function InstallmentHistory({
     }, [trackingId]);
 
     return (
-        <div className='absolute top-0 left-0 w-full h-full flex justify-center items-center bg-black/10'>
-            <div className='max-w-[800px] bg-white rounded-md p-4 shadow-md'>
+            <div className='fixed inset-0 z-50 flex justify-center items-center bg-black/10 p-4'>            <div className='max-w-[800px] bg-white rounded-md p-4 shadow-md'>
                 <div className='flex justify-between items-center border-b border-gray-200 pb-3'>
                     <div className='font-semibold text-lg mr-8'>Installment TimeLine #{trackingId}</div>
                     <div className='flex justify-center items-center gap-4'>
