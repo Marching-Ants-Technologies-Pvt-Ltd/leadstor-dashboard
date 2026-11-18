@@ -153,21 +153,6 @@ export default function ExportEnquiriesModal({ isOpen, onClose, totalLeads = 0, 
                 return;
             }
 
-            // Show Save As dialog first
-            if (!window.showSaveFilePicker) {
-                toast.error('File system access not supported in this browser');
-                return;
-            }
-
-            const defaultFileName = `leads_export_${new Date().toISOString().split('T')[0]}.xlsx`;
-            const fileHandle = await window.showSaveFilePicker({
-                suggestedName: defaultFileName,
-                types: [{
-                    description: 'Excel files',
-                    accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] }
-                }]
-            });
-
             // Get current filters and session data
             const appliedFilters = LeadFilters.value();
             const corporateId = Corporate?._id;
@@ -186,6 +171,22 @@ export default function ExportEnquiriesModal({ isOpen, onClose, totalLeads = 0, 
             const useWorker = exportLimit > 500;
 
             if (useWorker) {
+
+                // Show Save As dialog first
+                if (!window.showSaveFilePicker) {
+                    toast.error('File system access not supported in this browser');
+                    return;
+                }
+
+                const defaultFileName = `leads_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+                const fileHandle = await window.showSaveFilePicker({
+                    suggestedName: defaultFileName,
+                    types: [{
+                        description: 'Excel files',
+                        accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] }
+                    }]
+                });
+
                 // Close modal and start progress tracking
                 onClose();
                 onDownloadStart?.(`Exporting ${exportLimit.toLocaleString()} enquiries...`);
