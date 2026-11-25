@@ -15,6 +15,23 @@ import "react-toastify/ReactToastify.min.css";
 import { Corporate, Test, User } from "@/utility/TinyDB";
 import { set } from "zod";
 
+// Anything outside normal keyboard characters (emoji, Hindi, é, ₹, curly quotes, etc.)
+const SPECIAL_CHAR_REGEX = /[^\x20-\x7E\t\r\n]/gu;
+
+const findSpecialChars = (value) => {
+  const matches = String(value ?? "").match(SPECIAL_CHAR_REGEX);
+  return matches ? Array.from(new Set(matches)) : [];
+};
+
+const showValidationError = (message) =>
+  toast.error(message, {
+    autoClose: 12000,    // stays 12 seconds (default is 5)
+    closeButton: true,   // cross to close it earlier
+    closeOnClick: false, // clicking or selecting the text won't dismiss it
+    pauseOnHover: true,  // timer pauses while the mouse is over it
+    draggable: false,
+  });
+
 export default function AddLeadDynamic({ onClose, onRefreshTable }) {
   const corporate = Corporate || {};
   const test = Test || {};
@@ -603,6 +620,45 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
     }
     hot.render();
 
+    // Special character check (these rows break the import)
+    const specialRows = [];
+    for (let r = 0; r < raw.length; r++) {
+      const row = raw[r] || {};
+      const badCells = [];
+      fields.forEach((f, c) => {
+        const found = findSpecialChars(row[f.dataField]);
+        if (found.length > 0) {
+          badCells.push({ label: f.fieldName ?? f.displayName ?? f.dataField, chars: found });
+          hot.setCellMeta(r, c, "className", "htInvalid");
+        }
+      });
+      if (badCells.length > 0) specialRows.push({ row: r + 1, badCells });
+    }
+
+    if (specialRows.length > 0) {
+      hot.render();
+      return {
+        ok: false,
+        message: (
+          <div>
+            <strong>{specialRows.length} row(s) contain special characters</strong>
+            <div>
+              Emoji, non-English letters or symbols are not supported. Please correct
+              the highlighted cells and import again.
+            </div>
+            <ul style={{ margin: "6px 0 0", paddingLeft: 18, textAlign: "left", maxHeight: 240, overflowY: "auto" }}>
+              {specialRows.slice(0, 10).map(({ row, badCells }) => (
+                <li key={row}>
+                  Row {row}: {badCells.map((b) => `${b.label} (${b.chars.join(" ")})`).join(", ")}
+                </li>
+              ))}
+              {specialRows.length > 10 && <li>...and {specialRows.length - 10} more row(s)</li>}
+            </ul>
+          </div>
+        ),
+      };
+    }
+
     const emails = [];
     const phones = [];
     const countryCode = (corporate?.country_code || "IN").toUpperCase();
@@ -879,7 +935,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
       // Step 1: Validation (existing logic)
       const validation = await validateHotData();
       if (!validation.ok) {
-        toast.error(validation.message);
+        showValidationError(validation.message);
         return;
       }
 
@@ -976,7 +1032,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
 
       const validation = await validateHotData();
       if (!validation.ok) {
-        toast.error(validation.message);
+        showValidationError(validation.message);
         return;
       }
 
